@@ -1,0 +1,57 @@
+global:
+   matchSelectors:
+     aws_base:
+       match_keys:
+         provider: aws
+       match_labels:
+         environment: dev
+         purpose: config0
+   metadata:   
+     labels:
+       general: 
+         environment: dev
+         purpose: config0
+     matchSelectors:
+        network_vars:
+          labels:
+            environment: dev
+            purpose: config0
+        eks_info:
+          keys:
+            provider: aws
+            region: eu-west-1
+            aws_default_region: eu-west-1
+          params:
+            resource_type: eks
+          labels:
+            environment: dev
+            purpose: config0
+custom:
+   rds_eks:
+     stack_name: williaumwu:::rds_eks
+     arguments: 
+       env_name: rds-eks
+       vpc_id: selector:::network_vars::vpc_id
+       public_subnet_ids: selector:::network_vars::public_subnet_ids:csv  # selector definition injected by platform configs
+       private_subnet_ids: selector:::network_vars::private_subnet_ids:csv  # selector definition injected by platform configs
+       db_sg_id: selector:::network_vars::db_sg_id  # selector definition injected by platform configs
+       db_engine: MySQL
+       db_engine_version: 5.7.44
+       db_allocated_storage: 14
+       db_instance_class: db.t3.micro
+       eks_cluster_sg_id: selector:::network_vars::bastion_sg_id  # selector definition injected by platform configs
+       eks_node_role_arn: selector:::eks_info::node_role_arn  # selector definition injected by platform configs
+       cloud_tags_hash:
+         environment: dev
+         purpose: config0
+     spec:
+       serialization:
+         to_base64:
+           arguments:
+             - cloud_tags_hash
+     metadata:
+       labels:
+         - general
+       matchSelectors:
+         - network_vars
+         - eks_info

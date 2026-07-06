@@ -1,0 +1,34 @@
+global:
+  arguments: 
+    aws_default_region: eu-west-1
+  metadata:   
+    labels:
+       general: 
+         environment: dev
+         purpose: eval-ed
+       infrastructure:
+         cloud: aws
+         product: vpc
+         area: network
+infrastructure:
+  vpc:
+    stack_name: elasticdev:::aws_vpc_simple
+    arguments:
+      vpc_name: eval-ed-vpc-simple
+      eks_cluster: eval-ed-eks
+      publish_to_saas: true
+      cloud_tags_hash:
+        environment: dev
+        purpose: eval-ed
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
+    metadata:
+      labels:
+        - general
+        - infrastructure
+      credentials:
+        - reference: eval-ed-iam
+          orchestration: true

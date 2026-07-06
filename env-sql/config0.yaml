@@ -1,0 +1,139 @@
+global:
+  arguments:
+    aws_default_region: eu-west-1
+
+labels:
+  general:
+    environment: dev
+    purpose: config0
+
+defaults:
+  match:
+    keys:
+      provider: aws
+    labels:
+      environment: dev
+      purpose: config0
+
+selectors:
+  vpc_info:
+    match:
+      filter:
+        resource_type: vpc
+  public_route_table:
+    match:
+      keys:
+        public_route_table: true
+      filter:
+        resource_type: route_table
+  private_route_table:
+    match:
+      keys:
+        private_route_table: true
+      filter:
+        resource_type: route_table
+  private_subnet_info:
+    match:
+      keys:
+        name: private
+      filter:
+        resource_type: subnet
+  public_subnet_info:
+    match:
+      keys:
+        name: public
+      filter:
+        resource_type: subnet
+  sg_database_info:
+    match:
+      keys:
+        name: database
+      filter:
+        resource_type: security_group
+  sg_bastion_info:
+    match:
+      keys:
+        name: bastion
+      filter:
+        resource_type: security_group
+  sg_web_info:
+    match:
+      keys:
+        name: web
+      filter:
+        resource_type: security_group
+  sg_api_info:
+    match:
+      keys:
+        name: api
+      filter:
+        resource_type: security_group
+  network_vars:
+    match:
+      labels:
+        environment: dev
+        purpose: config0
+  eks_info:
+    match:
+      keys:
+        provider: aws
+        region: eu-west-1
+        aws_default_region: eu-west-1
+      labels:
+        environment: dev
+        purpose: config0
+      filter:
+        resource_type: eks
+
+stacks:
+  env_3tier:
+    stack: williaumwu:::env_sql
+    arguments:
+      env_name: sql
+      aws_default_region: eu-west-1
+      vpc_id: selector:::vpc_info::vpc_id
+      vpc_name: selector:::vpc_info::vpc_name
+      public_subnet_ids: selector:::public_subnet_info::subnet_id:csv
+      private_route_table_id: selector:::private_route_table::route_table_id
+      private_subnet_ids: selector:::private_subnet_info::subnet_id:csv
+      db_sg_id: selector:::sg_database_info::sg_id
+      eks_cluster_sg_id: selector:::sg_bastion_info::sg_id
+      eks_node_role_arn: selector:::eks_info::node_role_arn
+      db_engine: MySQL
+      db_engine_version: 5.7.44
+      db_allocated_storage: 14
+      db_instance_class: db.t3.micro
+      netvars_set_labels_hash:
+        region: eu-west-1
+        environment: dev
+        purpose: config0
+        area: network
+        cloud: aws
+      netvars_set_arguments_hash:
+        vpc_name: selector:::vpc_info::name
+        vpc_id: selector:::vpc_info::vpc_id
+        public_subnet_ids: selector:::public_subnet_info::subnet_id:csv
+        private_subnet_ids: selector:::private_subnet_info::subnet_id:csv
+        public_route_table_id: selector:::public_route_table::route_table_id
+        private_route_table_id: selector:::private_route_table::route_table_id
+        db_sg_id: selector:::sg_database_info::sg_id
+        bastion_sg_id: selector:::sg_bastion_info::sg_id
+        web_sg_id: selector:::sg_web_info::sg_id
+        api_sg_id: selector:::sg_api_info::sg_id
+      cloud_tags_hash:
+        environment: dev
+        purpose: config0
+    selectors:
+      - vpc_info
+      - public_route_table
+      - private_route_table
+      - public_subnet_info
+      - private_subnet_info
+      - sg_bastion_info
+      - sg_database_info
+      - sg_web_info
+      - sg_api_info
+      - network_vars
+      - eks_info
+    connections:
+      - reference: dev1

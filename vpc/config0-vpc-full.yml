@@ -1,0 +1,32 @@
+global:
+   arguments: 
+     aws_default_region: eu-west-1
+labels:
+   general: 
+     environment: test
+     purpose: test
+   infrastructure:
+     cloud: aws
+     product: vpc
+     area: network
+infrastructure:
+   vpc:
+     stack_name: elasticdev:::aws_vpc_and_security_group
+     arguments:
+       vpc_name: tier_vpc
+       main_network_block: 10.18.0.0/16
+       tier_level: "2"
+       enable_nat_gateway: true
+       single_nat_gateway: true
+       enable_dns_hostnames: true
+       reuse_nat_ips: true
+       one_nat_gateway_per_az: false
+       use_docker: True
+       labels: "firstname:bob,surname:lee"
+       tags: "tag1,tag2,tag3"
+     labels:
+       - general
+       - infrastructure
+     credentials:
+       - reference: eval-ed-iam
+         orchestration: true

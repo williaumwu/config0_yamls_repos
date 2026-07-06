@@ -1,0 +1,70 @@
+global_arguments:
+   aws_default_region: us-west-1
+labels:
+   general: 
+     environment: dev
+     purpose: test
+   infrastructure:
+     cloud: aws
+     product: rds
+     app_tier: database
+selectors:
+   vpc_info:
+     labels:
+       car: bmw
+       model: 320i
+       environment: dev
+       app_tier: networking
+     keys:
+       provider: aws
+       region: us-west-1
+     parameters:
+       must_exists: True
+       resource_type: vpc
+   sg_info:
+     labels:
+       car: bmw
+       model: 320i
+       environment: dev
+       app_tier: networking
+     keys:
+       provider: aws
+       region: us-west-1
+       name: database
+     parameters:
+       must_be_one: True
+       resource_type: security_group
+   subnet_info:
+     labels:
+       car: bmw
+       model: 320i
+       environment: dev
+       app_tier: networking
+     keys:
+       provider: aws
+       region: us-west-1
+       name: private
+     parameters:
+       resource_type: subnet
+infrastructure:
+   rds:
+       stack_name: elasticdev:::aws_rds
+       arguments:
+          vpc_name: selector:::vpc_info::name
+          sg_id: selector:::sg_info::sg_id
+          subnet_ids: selector:::subnet_info::subnet_id:csv
+          rds_name: eval-ed-rds
+          allocated_storage: 14
+          db_name: app
+       labels:
+         - general
+         - infrastructure
+       selectors:
+         - vpc_info
+         - sg_info
+         - subnet_info
+       credentials:
+           - reference: aws_2
+             orchestration: true
+destroy:
+   stack_name: elasticdev:::ed_core::callback_delete

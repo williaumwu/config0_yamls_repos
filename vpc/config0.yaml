@@ -1,0 +1,22 @@
+global:
+  arguments:
+    aws_default_region: eu-west-1
+
+labels:
+  general:
+    environment: dev
+    purpose: eval-config0
+  infrastructure:
+    cloud: aws
+    product: vpc
+    area: network
+
+stacks:
+  vpc:
+    stack: config0-hub:::aws_vpc_simple
+    arguments:
+      vpc_name: eval-config0-vpc-simple
+      eks_cluster: eval-config0-eks
+      cloud_tags_hash:
+        environment: dev
+        purpose: eval-config0

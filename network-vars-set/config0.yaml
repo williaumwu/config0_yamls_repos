@@ -1,0 +1,7 @@
+platform: config0-hub:::devops-solutions::platform-eval-config0
+stacks:
+  network_vars_set:
+    stack_alias: network_vars_set
+    arguments:
+      vars_set_name: config0-eval-network
+      evaluate: False

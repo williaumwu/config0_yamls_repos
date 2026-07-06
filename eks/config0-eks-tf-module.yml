@@ -1,0 +1,41 @@
+global:
+   arguments: 
+     aws_default_region: eu-west-1
+labels:
+   general: 
+     environment: dev
+     purpose: eval-ed
+   infrastructure:
+     cloud: aws
+     product: eks
+selectors:
+   network_vars:
+     labels:
+       environment: dev
+       purpose: eval-ed
+       area: network
+       region: eu-west-1
+       cloud: aws
+infrastructure:
+   eks:
+     stack_name: elasticdev:::aws_eks_tf_module
+     arguments:
+       vpc_name: selector:::network_vars::vpc_name
+       vpc_id: selector:::network_vars::vpc_id
+       subnet_ids: selector:::network_vars::public_subnet_ids:csv
+       sg_id: selector:::network_vars::bastion_sg_id
+       eks_cluster: eval-ed-eks
+       eks_cluster_version: 1.25
+       eks_node_min_capacity: 1
+       eks_node_max_capacity: 1
+       eks_node_desired_capacity: 1
+       eks_node_instance_type: t3.medium
+       publish_to_saas: true
+     labels:
+       - general
+       - infrastructure
+     selectors:
+       - network_vars
+     credentials:
+       - reference: eval-ed-iam
+         orchestration: true

@@ -1,0 +1,41 @@
+global:
+  arguments:
+    aws_default_region: eu-west-1
+
+labels:
+  general:
+    environment: dev
+    purpose: eval-config0
+  infrastructure:
+    cloud: aws
+    product: rds
+    area: database
+
+selectors:
+  network_vars:
+    match:
+      labels:
+        environment: dev
+        purpose: eval-config0
+        area: network
+        region: eu-west-1
+        cloud: aws
+
+stacks:
+  rds:
+    stack: config0-hub:::aws_rds
+    arguments:
+      vpc_name: selector:::network_vars::vpc_name
+      sg_id: selector:::network_vars::db_sg_id
+      subnet_ids: selector:::network_vars::private_subnet_ids
+      rds_name: eval-config0-rds
+      allocated_storage: 14
+      db_name: app
+      publish_creds: true
+      cloud_tags_hash:
+        environment: dev
+        purpose: eval-config0
+    selectors:
+      - network_vars
+    connections:
+      - reference: dev1

@@ -1,0 +1,78 @@
+global:
+   arguments: 
+     aws_default_region: eu-west-1
+labels:
+   general: 
+     environment: dev
+     purpose: eval-ed
+   infrastructure:
+     cloud: aws
+     product: eks
+selectors:
+   network_vars:
+     labels:
+       environment: dev
+       purpose: eval-ed
+       area: network
+       region: eu-west-1
+       cloud: aws
+   eks_info:
+     keys:
+       provider: aws
+       region: eu-west-1
+     params:
+       must_exists: True
+       resource_type: eks
+     labels:
+       environment: dev
+       purpose: eval-ed
+       cloud: aws
+infrastructure:
+   eks_cluster:
+     stack_name: elasticdev:::aws_eks_cluster
+     arguments:
+       vpc_name: selector:::network_vars::vpc_name
+       vpc_id: selector:::network_vars::vpc_id
+       # vpc with NAT, private_subet_ids is more secure
+       subnet_ids: selector:::network_vars::public_subnet_ids:csv
+       sg_id: selector:::network_vars::bastion_sg_id
+       eks_cluster: eval-ed-eks
+       eks_cluster_version: 1.25
+       publish_to_saas: true
+     labels:
+       - general
+       - infrastructure
+     selectors:
+       - network_vars
+     credentials:
+       - reference: eval-ed-iam
+         orchestration: true
+   eks_nodegroup:
+     dependencies: 
+       - infrastructure::eks_cluster
+     stack_name: elasticdev:::aws_eks_nodegroup
+     arguments:
+       # vpc with NAT, private_subet_ids is more secure
+       eks_subnet_ids: selector:::network_vars::public_subnet_ids:csv
+       eks_node_role_arn: selector:::eks_info::node_role_arn
+       eks_cluster: eval-ed-eks
+       eks_node_capacity_type: ON_DEMAND
+       eks_node_ami_type: AL2_x86_64
+       eks_node_max_capacity: 1
+       eks_node_min_capacity: 1
+       eks_node_desired_capacity: 1
+       eks_node_disksize: 25
+       eks_node_group_name: eval-ed-eks-main
+       publish_to_saas: true
+       eks_node_instance_types: 
+         - t3.medium
+         - t3.large
+     labels:
+       - general
+       - infrastructure
+     selectors:
+       - network_vars
+       - eks_info
+     credentials:
+       - reference: eval-ed-iam
+         orchestration: true

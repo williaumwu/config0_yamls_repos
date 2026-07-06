@@ -1,0 +1,27 @@
+global:
+  arguments:
+    aws_default_region: eu-west-1
+
+stacks:
+  eks:
+    stack: config0-hub:::aws_eks
+    arguments:
+      vpc_name: selector:::network_vars::vpc_name
+      vpc_id: selector:::network_vars::vpc_id
+      eks_cluster: eval-config0-eks
+      eks_cluster_version: "1.29"
+      eks_cluster_subnet_ids: selector:::network_vars::public_subnet_ids:csv
+      eks_cluster_sg_id: selector:::network_vars::bastion_sg_id
+      eks_node_group_subnet_ids: selector:::network_vars::private_subnet_ids:csv
+      eks_node_role_arn: selector:::eks_info::node_role_arn
+      eks_node_capacity_type: ON_DEMAND
+      eks_node_ami_type: AL2_x86_64
+      eks_node_max_capacity: 1
+      eks_node_min_capacity: 1
+      eks_node_desired_capacity: 1
+      eks_node_disksize: 25
+      eks_node_instance_types:
+        - t3.medium
+        - t3.large
+    connections:
+      - reference: dev1

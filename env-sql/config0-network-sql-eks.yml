@@ -1,0 +1,141 @@
+global:
+   matchSelectors:
+     aws_base:
+       match_keys:
+         provider: aws
+       match_labels:
+         environment: dev
+         purpose: config0
+   metadata:   
+     labels:
+       general: 
+         environment: dev
+         purpose: config0
+     matchSelectors:
+        vpc_info:
+          match_base: aws_base
+          match_params:
+            resource_type: vpc
+        public_route_table:
+          match_base: aws_base
+          match_keys:
+            public_route_table: true
+          match_params:
+            resource_type: route_table
+        private_route_table:
+          match_base: aws_base
+          match_keys:
+            private_route_table: true
+          match_params:
+            resource_type: route_table
+        private_subnet_info:
+          match_base: aws_base
+          match_keys:
+            name: private
+          match_params:
+            resource_type: subnet
+        public_subnet_info:
+          match_base: aws_base
+          match_keys:
+            name: public
+          match_params:
+            resource_type: subnet
+        sg_database_info:
+          match_base: aws_base
+          match_keys:
+            name: database
+          match_params:
+            resource_type: security_group
+        sg_bastion_info:
+          match_base: aws_base
+          match_keys:
+            name: bastion
+          match_params:
+            resource_type: security_group
+        sg_web_info:
+          match_base: aws_base
+          match_keys:
+            name: web
+          match_params:
+            resource_type: security_group
+        sg_api_info:
+          match_base: aws_base
+          match_keys:
+            name: api
+          match_params:
+            resource_type: security_group
+        network_vars:
+          labels:
+            environment: dev
+            purpose: config0
+        eks_info:
+          keys:
+            provider: aws
+            region: eu-west-1
+            aws_default_region: eu-west-1
+          params:
+            resource_type: eks
+          labels:
+            environment: dev
+            purpose: config0
+custom:
+   sql_env:
+     stack_name: williaumwu:::dev
+     arguments: 
+       env_name: config0-sql-env
+       vpc_id: selector:::network_vars::vpc_id
+       public_subnet_ids: selector:::network_vars::public_subnet_ids:csv
+       private_subnet_ids: selector:::network_vars::private_subnet_ids:csv
+       private_route_table_id: selector:::private_route_table::route_table_id
+       vars_set_labels_hash:
+         region: eu-west-1
+         environment: dev
+         purpose: config0
+         area: network
+         cloud: aws
+       vars_set_arguments_hash:
+         vpc_name: selector:::vpc_info::name
+         vpc_id: selector:::vpc_info::vpc_id
+         public_subnet_ids: selector:::public_subnet_info::subnet_id:csv
+         private_subnet_ids: selector:::private_subnet_info::subnet_id:csv
+         public_route_table_id: selector:::public_route_table::route_table_id
+         private_route_table_id: selector:::private_route_table::route_table_id
+         db_sg_id: selector:::sg_database_info::sg_id
+         bastion_sg_id: selector:::sg_bastion_info::sg_id
+         web_sg_id: selector:::sg_web_info::sg_id
+         api_sg_id: selector:::sg_api_info::sg_id
+       cloud_tags_hash:
+         environment: dev
+         purpose: config0
+       db_sg_id: selector:::network_vars::db_sg_id
+       db_engine: MySQL
+       db_engine_version: 5.7.44
+       db_allocated_storage: 14
+       db_instance_class: db.t3.micro
+       eks_cluster_sg_id: selector:::network_vars::bastion_sg_id
+       eks_node_role_arn: selector:::eks_info::node_role_arn
+       cloud_tags_hash:
+         environment: dev
+         purpose: config0
+     spec:
+       serialization:
+         to_base64:
+           arguments:
+             - cloud_tags_hash
+             - vars_set_labels_hash
+             - vars_set_arguments_hash
+     metadata:
+       labels:
+         - general
+       matchSelectors:
+         - vpc_info
+         - public_route_table
+         - private_route_table
+         - public_subnet_info
+         - private_subnet_info
+         - sg_bastion_info
+         - sg_database_info
+         - sg_web_info
+         - sg_api_info
+         - network_vars
+         - eks_info
