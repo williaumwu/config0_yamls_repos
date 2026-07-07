@@ -11,19 +11,18 @@ labels:
     product: rds
     area: database
 
-selectors:
-  network_vars:
-    match:
-      labels:
-        environment: dev
-        purpose: eval-config0
-        area: network
-        region: eu-west-1
-        cloud: aws
+network_vars:
+  match:
+    labels:
+      environment: dev
+      purpose: eval-config0
+      area: network
+      region: eu-west-1
+      cloud: aws
 
 stacks:
   rds:
-    stack: config0-hub:::aws_rds
+    stack: config0-hub:::aws_storage::aws_rds
     arguments:
       vpc_name: selector:::network_vars::vpc_name
       sg_id: selector:::network_vars::db_sg_id
