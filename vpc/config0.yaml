@@ -13,7 +13,7 @@ labels:
 
 stacks:
   vpc:
-    stack: config0-hub:::aws_vpc_simple
+    stack: config0-hub:::aws_networking::aws_vpc_simple
     arguments:
       vpc_name: eval-config0-vpc-simple
       eks_cluster: eval-config0-eks
