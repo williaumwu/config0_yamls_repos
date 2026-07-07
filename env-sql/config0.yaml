@@ -12,9 +12,7 @@ global:
 # Ordering implication: on a fresh run sql-vpc does not exist when env_sql's order is
 # minted, so both selectors skip-and-leave-original at the Python mint pass and resolve
 # at the Go dispatch pass — which lands after the `network` substack has created and
-# written back sql-vpc (env_sql inserts network before rds_eks, sequentially). Live
-# resolution also depends on the flat labels_<name> write-back (see story-stack-facts
-# "Open findings" #1); until that lands these match zero regardless of fixture shape.
+# written back sql-vpc (env_sql inserts network before rds_eks, sequentially).
 labels:
   general:
     environment: dev
