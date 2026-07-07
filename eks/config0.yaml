@@ -2,9 +2,26 @@ global:
   arguments:
     aws_default_region: eu-west-1
 
+network_vars:
+  match:
+    labels:
+      environment: dev
+      purpose: eval-config0
+      area: network
+      region: eu-west-1
+      cloud: aws
+
+eks_info:
+  match:
+    filter:
+      resource_type: eks
+    labels:
+      environment: dev
+      purpose: eval-config0
+
 stacks:
   eks:
-    stack: config0-hub:::aws_eks
+    stack: config0-hub:::aws_eks::aws_eks
     arguments:
       vpc_name: selector:::network_vars::vpc_name
       vpc_id: selector:::network_vars::vpc_id
@@ -23,5 +40,8 @@ stacks:
       eks_node_instance_types:
         - t3.medium
         - t3.large
+    selectors:
+      - network_vars
+      - eks_info
     connections:
       - reference: dev1
