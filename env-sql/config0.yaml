@@ -67,11 +67,6 @@ sg_api_info:
       name: api
     filter:
       resource_type: security_group
-network_vars:
-  match:
-    labels:
-      environment: dev
-      purpose: config0
 eks_info:
   match:
     keys:
@@ -132,7 +127,6 @@ stacks:
       - sg_database_info
       - sg_web_info
       - sg_api_info
-      - network_vars
       - eks_info
     connections:
       - reference: dev1

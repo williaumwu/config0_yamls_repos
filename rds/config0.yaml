@@ -11,6 +11,9 @@ labels:
     product: rds
     area: database
 
+# network_vars matches the VPC resource record (it alone carries labels_region).
+# The VPC record promotes every terraform output (tf_configure._insert_outputs),
+# so vpc_name + private_subnet_ids live here.
 network_vars:
   match:
     labels:
@@ -20,12 +23,26 @@ network_vars:
       region: eu-west-1
       cloud: aws
 
+# sg_vars matches the security_group resource record — a SEPARATE record from the
+# VPC. The four *_sg_id values (bastion/web/api/db) are terraform outputs on this
+# record only; a single-cardinality selector cannot read them off the VPC record,
+# so db_sg_id needs its own selector keyed by resource_type.
+sg_vars:
+  match:
+    filter:
+      resource_type: security_group
+    labels:
+      environment: dev
+      purpose: eval-config0
+      area: network
+      cloud: aws
+
 stacks:
   rds:
     stack: config0-hub:::aws_storage::aws_rds
     arguments:
       vpc_name: selector:::network_vars::vpc_name
-      sg_id: selector:::network_vars::db_sg_id
+      sg_id: selector:::sg_vars::db_sg_id
       subnet_ids: selector:::network_vars::private_subnet_ids
       rds_name: eval-config0-rds
       allocated_storage: 14
@@ -36,5 +53,6 @@ stacks:
         purpose: eval-config0
     selectors:
       - network_vars
+      - sg_vars
     connections:
       - reference: dev1

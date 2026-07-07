@@ -10,6 +10,8 @@ labels:
     cloud: aws
     area: network
 
+# network_vars matches the VPC resource record (it alone carries labels_region);
+# vpc_name + private_subnet_ids are terraform outputs promoted onto it.
 network_vars:
   match:
     labels:
@@ -17,6 +19,18 @@ network_vars:
       purpose: eval-config0
       area: network
       region: eu-west-1
+      cloud: aws
+
+# sg_vars matches the security_group record — db_sg_id is a terraform output there,
+# not on the VPC record, so it needs a resource_type-keyed selector of its own.
+sg_vars:
+  match:
+    filter:
+      resource_type: security_group
+    labels:
+      environment: dev
+      purpose: eval-config0
+      area: network
       cloud: aws
 
 stacks:
@@ -34,7 +48,7 @@ stacks:
       - vpc
     arguments:
       vpc_name: selector:::network_vars::vpc_name
-      sg_id: selector:::network_vars::db_sg_id
+      sg_id: selector:::sg_vars::db_sg_id
       subnet_ids: selector:::network_vars::private_subnet_ids
       rds_name: eval-config0-rds
       allocated_storage: 14
@@ -45,5 +59,6 @@ stacks:
         purpose: eval-config0
     selectors:
       - network_vars
+      - sg_vars
     connections:
       - reference: dev1
