@@ -2,82 +2,44 @@ global:
   arguments:
     aws_default_region: eu-west-1
 
+# env_sql is SELF-CONTAINED: its `network` substack builds sql-vpc + subnets +
+# route tables + security groups (and a network_vars_set + NAT), then its rds_eks
+# substack builds the RDS + EKS. So the config0.yaml carries only business arguments;
+# the wiring from the created network into RDS/EKS is the two selectors below, which
+# query env_sql's OWN resources within the same run. The `purpose: config0` label
+# namespaces those resources apart from story 2's `eval-config0` VPC.
+#
+# Ordering implication: on a fresh run sql-vpc does not exist when env_sql's order is
+# minted, so both selectors skip-and-leave-original at the Python mint pass and resolve
+# at the Go dispatch pass — which lands after the `network` substack has created and
+# written back sql-vpc (env_sql inserts network before rds_eks, sequentially). Live
+# resolution also depends on the flat labels_<name> write-back (see story-stack-facts
+# "Open findings" #1); until that lands these match zero regardless of fixture shape.
 labels:
   general:
     environment: dev
     purpose: config0
 
-defaults:
-  match:
-    keys:
-      provider: aws
-    labels:
-      environment: dev
-      purpose: config0
-
+# The single VPC record env_sql's network substack creates. vpc_simple promotes every
+# terraform output onto it, so vpc_id / subnet id CSVs / the private route table id all
+# read off this one record — there are NO separate subnet/route_table resource records.
 vpc_info:
   match:
     filter:
       resource_type: vpc
-public_route_table:
-  match:
-    keys:
-      public_route_table: true
-    filter:
-      resource_type: route_table
-private_route_table:
-  match:
-    keys:
-      private_route_table: true
-    filter:
-      resource_type: route_table
-private_subnet_info:
-  match:
-    keys:
-      name: private
-    filter:
-      resource_type: subnet
-public_subnet_info:
-  match:
-    keys:
-      name: public
-    filter:
-      resource_type: subnet
-sg_database_info:
-  match:
-    keys:
-      name: database
-    filter:
-      resource_type: security_group
-sg_bastion_info:
-  match:
-    keys:
-      name: bastion
-    filter:
-      resource_type: security_group
-sg_web_info:
-  match:
-    keys:
-      name: web
-    filter:
-      resource_type: security_group
-sg_api_info:
-  match:
-    keys:
-      name: api
-    filter:
-      resource_type: security_group
-eks_info:
-  match:
-    keys:
-      provider: aws
-      region: eu-west-1
-      aws_default_region: eu-west-1
     labels:
       environment: dev
       purpose: config0
+
+# The single security_group record (aws_sg emits one record with all four *_sg_id
+# outputs — bastion/web/api/db — not one record per tier).
+sg_vars:
+  match:
     filter:
-      resource_type: eks
+      resource_type: security_group
+    labels:
+      environment: dev
+      purpose: config0
 
 stacks:
   env_3tier:
@@ -86,47 +48,20 @@ stacks:
       env_name: sql
       aws_default_region: eu-west-1
       vpc_id: selector:::vpc_info::vpc_id
-      vpc_name: selector:::vpc_info::vpc_name
-      public_subnet_ids: selector:::public_subnet_info::subnet_id:csv
-      private_route_table_id: selector:::private_route_table::route_table_id
-      private_subnet_ids: selector:::private_subnet_info::subnet_id:csv
-      db_sg_id: selector:::sg_database_info::sg_id
-      eks_cluster_sg_id: selector:::sg_bastion_info::sg_id
-      eks_node_role_arn: selector:::eks_info::node_role_arn
+      public_subnet_ids: selector:::vpc_info::public_subnet_ids:csv
+      private_subnet_ids: selector:::vpc_info::private_subnet_ids:csv
+      private_route_table_id: selector:::vpc_info::private_route_table_id
+      db_sg_id: selector:::sg_vars::db_sg_id
+      eks_cluster_sg_id: selector:::sg_vars::bastion_sg_id
       db_engine: MySQL
       db_engine_version: 5.7.44
       db_allocated_storage: 14
       db_instance_class: db.t3.micro
-      netvars_set_labels_hash:
-        region: eu-west-1
-        environment: dev
-        purpose: config0
-        area: network
-        cloud: aws
-      netvars_set_arguments_hash:
-        vpc_name: selector:::vpc_info::name
-        vpc_id: selector:::vpc_info::vpc_id
-        public_subnet_ids: selector:::public_subnet_info::subnet_id:csv
-        private_subnet_ids: selector:::private_subnet_info::subnet_id:csv
-        public_route_table_id: selector:::public_route_table::route_table_id
-        private_route_table_id: selector:::private_route_table::route_table_id
-        db_sg_id: selector:::sg_database_info::sg_id
-        bastion_sg_id: selector:::sg_bastion_info::sg_id
-        web_sg_id: selector:::sg_web_info::sg_id
-        api_sg_id: selector:::sg_api_info::sg_id
       cloud_tags_hash:
         environment: dev
         purpose: config0
     selectors:
       - vpc_info
-      - public_route_table
-      - private_route_table
-      - public_subnet_info
-      - private_subnet_info
-      - sg_bastion_info
-      - sg_database_info
-      - sg_web_info
-      - sg_api_info
-      - eks_info
+      - sg_vars
     connections:
       - reference: dev1
