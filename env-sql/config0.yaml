@@ -15,79 +15,78 @@ defaults:
       environment: dev
       purpose: config0
 
-selectors:
-  vpc_info:
-    match:
-      filter:
-        resource_type: vpc
-  public_route_table:
-    match:
-      keys:
-        public_route_table: true
-      filter:
-        resource_type: route_table
-  private_route_table:
-    match:
-      keys:
-        private_route_table: true
-      filter:
-        resource_type: route_table
-  private_subnet_info:
-    match:
-      keys:
-        name: private
-      filter:
-        resource_type: subnet
-  public_subnet_info:
-    match:
-      keys:
-        name: public
-      filter:
-        resource_type: subnet
-  sg_database_info:
-    match:
-      keys:
-        name: database
-      filter:
-        resource_type: security_group
-  sg_bastion_info:
-    match:
-      keys:
-        name: bastion
-      filter:
-        resource_type: security_group
-  sg_web_info:
-    match:
-      keys:
-        name: web
-      filter:
-        resource_type: security_group
-  sg_api_info:
-    match:
-      keys:
-        name: api
-      filter:
-        resource_type: security_group
-  network_vars:
-    match:
-      labels:
-        environment: dev
-        purpose: config0
-  eks_info:
-    match:
-      keys:
-        provider: aws
-        region: eu-west-1
-        aws_default_region: eu-west-1
-      labels:
-        environment: dev
-        purpose: config0
-      filter:
-        resource_type: eks
+vpc_info:
+  match:
+    filter:
+      resource_type: vpc
+public_route_table:
+  match:
+    keys:
+      public_route_table: true
+    filter:
+      resource_type: route_table
+private_route_table:
+  match:
+    keys:
+      private_route_table: true
+    filter:
+      resource_type: route_table
+private_subnet_info:
+  match:
+    keys:
+      name: private
+    filter:
+      resource_type: subnet
+public_subnet_info:
+  match:
+    keys:
+      name: public
+    filter:
+      resource_type: subnet
+sg_database_info:
+  match:
+    keys:
+      name: database
+    filter:
+      resource_type: security_group
+sg_bastion_info:
+  match:
+    keys:
+      name: bastion
+    filter:
+      resource_type: security_group
+sg_web_info:
+  match:
+    keys:
+      name: web
+    filter:
+      resource_type: security_group
+sg_api_info:
+  match:
+    keys:
+      name: api
+    filter:
+      resource_type: security_group
+network_vars:
+  match:
+    labels:
+      environment: dev
+      purpose: config0
+eks_info:
+  match:
+    keys:
+      provider: aws
+      region: eu-west-1
+      aws_default_region: eu-west-1
+    labels:
+      environment: dev
+      purpose: config0
+    filter:
+      resource_type: eks
 
 stacks:
   env_3tier:
-    stack: williaumwu:::env_sql
+    stack: config0-hub:::devops-solutions::env_sql
     arguments:
       env_name: sql
       aws_default_region: eu-west-1
