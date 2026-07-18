@@ -20,3 +20,8 @@ stacks:
       cloud_tags_hash:
         environment: dev
         purpose: eval-config0
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
