@@ -49,6 +49,7 @@ stacks:
       sg_id: selector:::sg_vars::db_sg_id
       subnet_ids: selector:::network_vars::private_subnet_ids
       rds_name: eval-config0-rds
+      engine_version: "8.0.46"
       allocated_storage: 14
       db_name: app
       publish_creds: true
