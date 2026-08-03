@@ -11,11 +11,15 @@ labels:
     product: rds
     area: database
 
-# network_vars matches the VPC resource record (it alone carries labels_region).
+# network_vars matches the VPC resource record. The security_group record
+# carries the same labels (area/region/etc), so the selector must be pinned by
+# resource_type or it matches two records and fails single-cardinality.
 # The VPC record promotes every terraform output (tf_configure._insert_outputs),
 # so vpc_name + private_subnet_ids live here.
 network_vars:
   match:
+    filter:
+      resource_type: vpc
     labels:
       environment: dev
       purpose: eval-config0
