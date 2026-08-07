@@ -11,6 +11,21 @@ labels:
     product: vpc
     area: network
 
+# Explicit selectors section — vpc_vars matches the vpc resource record written
+# by the `vpc` stack below; the nat stack reads vpc_id/public_subnet_ids/
+# private_route_table_id off it. filter.resource_type narrows away the separate
+# security_group record that carries the same labels.
+selectors:
+  vpc_vars:
+    match:
+      filter:
+        resource_type: vpc
+      labels:
+        environment: dev
+        purpose: eval-config0
+        area: network
+        cloud: aws
+
 stacks:
   vpc:
     stack: config0-hub:::aws_networking::aws_vpc_simple
@@ -25,3 +40,18 @@ stacks:
         to_base64:
           arguments:
             - cloud_tags_hash
+
+  nat:
+    stack: config0-hub:::aws_networking::aws_nat_inst_vpc
+    # explicit stack-level dependency (config0.yaml `dependencies:` key) — the
+    # nat stack's selectors read the vpc resource record, so it must run after
+    # the vpc stack writes back in this same run.
+    dependencies:
+      - vpc
+    arguments:
+      service_name: eval-config0-nat
+      vpc_id: selector:::vpc_vars::vpc_id
+      public_subnet_ids: selector:::vpc_vars::public_subnet_ids:csv
+      private_route_table_id: selector:::vpc_vars::private_route_table_id
+    selectors:
+      - vpc_vars
