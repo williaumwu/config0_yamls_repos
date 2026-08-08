@@ -11,58 +11,65 @@ labels:
     product: rds
     area: database
 
-# network_vars matches the VPC resource record. The security_group record
-# carries the same labels (area/region/etc), so the selector must be pinned by
-# resource_type or it matches two records and fails single-cardinality.
-# The VPC record promotes every terraform output (tf_configure._insert_outputs),
-# so vpc_name + private_subnet_ids live here.
-network_vars:
-  match:
-    filter:
-      resource_type: vpc
-    labels:
-      environment: dev
-      purpose: eval-config0
-      area: network
-      region: eu-west-1
-      cloud: aws
+# Explicit selectors section — named selector definitions live under this key,
+# distinct from labels (work order WO-2: the original parser read an explicit
+# top-level `selectors:` key; the rewrite must restore it instead of guessing
+# from bare top-level keys with a match: sub-key).
+selectors:
+  # network_vars matches the VPC resource record (it alone carries labels_region).
+  # vpc_simple promotes every terraform output onto that record, so vpc_name +
+  # private_subnet_ids read off it. These are part-1's VPC records.
+  network_vars:
+    match:
+      filter:
+        resource_type: vpc
+      labels:
+        environment: dev
+        purpose: eval-config0
+        area: network
+        region: eu-west-1
+        cloud: aws
 
-# sg_vars matches the security_group resource record — a SEPARATE record from the
-# VPC. The four *_sg_id values (bastion/web/api/db) are terraform outputs on this
-# record only; a single-cardinality selector cannot read them off the VPC record,
-# so db_sg_id needs its own selector keyed by resource_type.
-sg_vars:
-  match:
-    filter:
-      resource_type: security_group
-    labels:
-      environment: dev
-      purpose: eval-config0
-      area: network
-      cloud: aws
+  # sg_vars matches the security_group record — a SEPARATE record from the VPC.
+  # db_sg_id is a terraform output on this record only, so it needs its own
+  # resource_type-keyed selector.
+  sg_vars:
+    match:
+      filter:
+        resource_type: security_group
+      labels:
+        environment: dev
+        purpose: eval-config0
+        area: network
+        cloud: aws
 
 stacks:
   rds:
-    stack: config0-hub:::aws_storage::aws_rds
+    stack: williaumwu:::config0-e2e-authoring::rds
+    # explicit per-stack label references — the stack names the label groups it
+    # wants (target syntax; parser ignores it today — that's fine).
+    labels:
+      - general
+      - infrastructure
     arguments:
+      # RDS-to-VPC wiring — kept exactly as the config0_yamls_repos rds scenario:
       vpc_name: selector:::network_vars::vpc_name
       sg_id: selector:::sg_vars::db_sg_id
       subnet_ids: selector:::network_vars::private_subnet_ids
       rds_name: eval-config0-rds
-      engine_version: "8.0.46"
       allocated_storage: 14
       db_name: app
       publish_creds: true
+      # _hash convention: authored as a dictionary, delivered to the worker as a
+      # base64 string via spec.serialization.to_base64 below.
       cloud_tags_hash:
         environment: dev
         purpose: eval-config0
+    selectors:
+      - network_vars
+      - sg_vars
     spec:
       serialization:
         to_base64:
           arguments:
             - cloud_tags_hash
-    selectors:
-      - network_vars
-      - sg_vars
-    connections:
-      - reference: dev1
