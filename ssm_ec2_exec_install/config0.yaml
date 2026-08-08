@@ -1,0 +1,7 @@
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+
+stacks:
+  ssm_ec2_exec_install:
+    stack: config0-hub:::aws::ssm_ec2_exec_install
