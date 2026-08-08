@@ -1,0 +1,47 @@
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+
+labels:
+  general:
+    environment: dev
+    purpose: ssm-ec2-exec-eventbridge
+
+# Explicit named selector definitions (rds/config0.yaml grammar). bucket_vars
+# matches the dedicated Lambda-artifacts bucket recorded by the aws_s3_bucket
+# stack (resource_type cloud_storage). The aws_s3_bucket stack promotes the
+# bucket name onto that record under BOTH `bucket` and `s3_bucket`, so the
+# install stack selects `s3_bucket` off it.
+selectors:
+  bucket_vars:
+    match:
+      filter:
+        resource_type: cloud_storage
+      labels:
+        environment: dev
+        purpose: ssm-ec2-exec-eventbridge
+
+stacks:
+  # Order 0: create + record the dedicated Lambda-artifacts bucket. cloud_tags_hash
+  # carries the labels that bucket_vars matches on.
+  lambda_bucket:
+    stack: config0-hub:::aws_storage::aws_s3_bucket
+    arguments:
+      bucket: ssm-ec2-exec-eventbridge-lambda-artifacts-570017720022
+      force_destroy: true
+      cloud_tags_hash:
+        environment: dev
+        purpose: ssm-ec2-exec-eventbridge
+
+  # Order 1: build the Lambda zips (CodeBuild) then create the infra (terraform).
+  # dependencies:[lambda_bucket] holds this until the bucket record is written
+  # back, so the selector resolves in the same run.
+  ssm_v2_install:
+    stack: config0-hub:::aws::ssm_ec2_exec_eventbridge_install
+    dependencies:
+      - lambda_bucket
+    arguments:
+      s3_bucket: selector:::bucket_vars::s3_bucket
+      aws_region: ap-northeast-1
+    selectors:
+      - bucket_vars
