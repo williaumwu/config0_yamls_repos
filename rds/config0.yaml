@@ -59,6 +59,7 @@ stacks:
       rds_name: eval-config0-rds
       allocated_storage: 14
       db_name: app
+      engine_version: "8.0.46"
       publish_creds: true
       # _hash convention: authored as a dictionary, delivered to the worker as a
       # base64 string via spec.serialization.to_base64 below.
