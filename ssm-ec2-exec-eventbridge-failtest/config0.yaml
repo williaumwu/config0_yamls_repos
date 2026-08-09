@@ -58,6 +58,6 @@ stacks:
       # no zips upload, terraform partially creates then fails on missing
       # lambda code. Deterministic reproduction of the failed-install orphan
       # case, used to prove destroy now reaches partial creates.
-      script_name: docker-to-lambda.test.sh
+      script_name: docker-to-lambda.failtest.sh
     selectors:
       - bucket_vars
