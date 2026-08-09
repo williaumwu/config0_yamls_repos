@@ -29,9 +29,6 @@ stacks:
     arguments:
       bucket: ssm-ec2-exec-eventbridge-lambda-artifacts-570017720022
       force_destroy: true
-      # Opt-in bucket policy: lets the tenant's config0-xe-codebuild role
-      # PutObject the built Lambda zips into this bucket.
-      engine_write_access: true
       cloud_tags_hash:
         environment: dev
         purpose: ssm-ec2-exec-eventbridge
