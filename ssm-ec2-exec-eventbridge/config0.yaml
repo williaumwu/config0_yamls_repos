@@ -32,6 +32,17 @@ stacks:
       cloud_tags_hash:
         environment: dev
         purpose: ssm-ec2-exec-eventbridge
+    # cloud_tags_hash is a `_hash`-convention arg: the aws_s3_bucket stack passes
+    # it straight to the tf_executor substack, which base64-decodes it. It MUST
+    # arrive base64-encoded, so declare it under spec.serialization.to_base64
+    # (same pattern the working aws_vpc_simple config0.yaml uses). Without this
+    # the map reaches tf_executor as a str(dict) and b64decode raises
+    # "Incorrect padding".
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
 
   # Order 1: build the Lambda zips (CodeBuild) then create the infra (terraform).
   # dependencies:[lambda_bucket] holds this until the bucket record is written
