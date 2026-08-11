@@ -6,6 +6,10 @@ labels:
   general:
     environment: dev
     purpose: ssm-ec2-exec-eventbridge-longbuild
+  infrastructure:
+    cloud: aws
+    product: vpc
+    area: network
 
 # Explicit named selector definitions (rds/config0.yaml grammar). bucket_vars
 # matches the dedicated Lambda-artifacts bucket recorded by the aws_s3_bucket
@@ -20,6 +24,32 @@ selectors:
       labels:
         environment: dev
         purpose: ssm-ec2-exec-eventbridge-longbuild
+  keypair_vars:
+    match:
+      filter:
+        resource_type: ssh_key_pair
+      labels:
+        environment: dev
+        purpose: ssm-ec2-exec-eventbridge-longbuild
+  network_vars:
+    match:
+      filter:
+        resource_type: vpc
+      labels:
+        environment: dev
+        purpose: ssm-ec2-exec-eventbridge-longbuild
+        area: network
+        region: ap-northeast-1
+        cloud: aws
+  sg_vars:
+    match:
+      filter:
+        resource_type: security_group
+      labels:
+        environment: dev
+        purpose: ssm-ec2-exec-eventbridge-longbuild
+        area: network
+        cloud: aws
   install_vars:
     match:
       filter:
@@ -29,7 +59,30 @@ selectors:
         purpose: ssm-ec2-exec-eventbridge-longbuild
 
 stacks:
-  # Order 0: create + record the dedicated Lambda-artifacts bucket. cloud_tags_hash
+  # Order 0: generate and record the story-owned EC2 key pair.
+  story_key_pair:
+    stack: config0-hub:::aws::ec2_keypair
+    arguments:
+      key_name: item11-e2e
+
+  # Order 1: create the story-owned VPC, subnets, and security groups. The
+  # dependency makes the key-pair-to-VPC story chain explicit.
+  story_vpc:
+    stack: config0-hub:::aws_networking::aws_vpc_simple
+    dependencies:
+      - story_key_pair
+    arguments:
+      vpc_name: item11-ssm-runner-vpc
+      cloud_tags_hash:
+        environment: dev
+        purpose: ssm-ec2-exec-eventbridge-longbuild
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
+
+  # Order 2: create + record the dedicated Lambda-artifacts bucket. cloud_tags_hash
   # carries the labels that bucket_vars matches on.
   lambda_bucket:
     stack: config0-hub:::aws_storage::aws_s3_bucket
@@ -48,7 +101,7 @@ stacks:
           arguments:
             - cloud_tags_hash
 
-  # Order 1: build the Lambda zips (CodeBuild) then create the infra (terraform).
+  # Order 3: build the Lambda zips (CodeBuild) then create the infra (terraform).
   # dependencies:[lambda_bucket] holds this until the bucket record is written
   # back, so the selector resolves in the same run.
   ssm_v2_install:
@@ -70,15 +123,19 @@ stacks:
     selectors:
       - bucket_vars
 
-  # Order 2: create an SSM-managed EC2 host for the live task-token proof.
-  # The install record supplies the instance profile created by the v2 module.
+  # Order 4: create an SSM-managed EC2 host for the live task-token proof.
+  # Explicit dependencies hold the host until the story VPC and install record
+  # are complete. story_vpc already depends on story_key_pair.
   ssm_test_host:
     stack: config0-hub:::aws::aws_ec2_server
     dependencies:
+      - story_vpc
       - ssm_v2_install
     arguments:
       hostname: item11-ssm-runner
-      ssh_key_name: item11-e2e
+      ssh_key_name: selector:::keypair_vars::key_name
+      subnet_ids: selector:::network_vars::public_subnet_ids:csv
+      sg_id: selector:::sg_vars::bastion_sg_id
       instance_type: t3.small
       iam_instance_profile: selector:::install_vars::instance_profile_name
       cloud_tags_hash:
@@ -86,6 +143,9 @@ stacks:
         environment: dev
         purpose: ssm-ec2-exec-eventbridge-longbuild
     selectors:
+      - keypair_vars
+      - network_vars
+      - sg_vars
       - install_vars
     spec:
       serialization:
