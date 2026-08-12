@@ -2,6 +2,15 @@ global:
   arguments:
     aws_default_region: eu-west-1
 
+labels:
+  general:
+    environment: dev
+    purpose: eval-config0
+  infrastructure:
+    cloud: aws
+    product: eks
+    area: compute
+
 selectors:
   # network_vars matches the VPC resource record (it alone carries labels_region);
   # vpc_name/vpc_id/public_subnet_ids/private_subnet_ids are terraform outputs there.
@@ -28,28 +37,22 @@ selectors:
         area: network
         cloud: aws
 
-  eks_info:
-    match:
-      filter:
-        resource_type: eks
-      labels:
-        environment: dev
-        purpose: eval-config0
-
 stacks:
   eks:
     stack: config0-hub:::aws_eks::aws_eks
+    labels:
+      - general
+      - infrastructure
     arguments:
       vpc_name: selector:::network_vars::vpc_name
       vpc_id: selector:::network_vars::vpc_id
       eks_cluster: eval-config0-eks
-      eks_cluster_version: "1.29"
+      eks_cluster_version: "1.35"
       eks_cluster_subnet_ids: selector:::network_vars::public_subnet_ids:csv
       eks_cluster_sg_id: selector:::sg_vars::bastion_sg_id
       eks_node_group_subnet_ids: selector:::network_vars::private_subnet_ids:csv
-      eks_node_role_arn: selector:::eks_info::node_role_arn
       eks_node_capacity_type: ON_DEMAND
-      eks_node_ami_type: AL2_x86_64
+      eks_node_ami_type: AL2023_x86_64_STANDARD
       eks_node_max_capacity: 1
       eks_node_min_capacity: 1
       eks_node_desired_capacity: 1
@@ -60,6 +63,5 @@ stacks:
     selectors:
       - network_vars
       - sg_vars
-      - eks_info
     connections:
       - reference: dev1
