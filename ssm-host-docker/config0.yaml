@@ -1,0 +1,150 @@
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+
+labels:
+  general:
+    environment: dev
+    purpose: ssm-host-docker
+  infrastructure:
+    cloud: aws
+    product: vpc
+    area: network
+
+# Explicit named selector definitions (rds/config0.yaml grammar). The distinct
+# purpose label ssm-host-docker keeps every selector singular next to the
+# other stories (must_be_one cardinality).
+selectors:
+  bucket_vars:
+    match:
+      filter:
+        resource_type: cloud_storage
+      labels:
+        environment: dev
+        purpose: ssm-host-docker
+  keypair_vars:
+    match:
+      filter:
+        resource_type: ssh_key_pair
+      labels:
+        environment: dev
+        purpose: ssm-host-docker
+  network_vars:
+    match:
+      filter:
+        resource_type: vpc
+      labels:
+        environment: dev
+        purpose: ssm-host-docker
+        area: network
+        region: ap-northeast-1
+        cloud: aws
+  install_vars:
+    match:
+      filter:
+        resource_type: ssm_ec2_exec_eventbridge_install
+      labels:
+        environment: dev
+        purpose: ssm-host-docker
+
+stacks:
+  # Order 0: generate and record the story-owned EC2 key pair. The key exists
+  # only because aws_ec2_server requires one - no SG opens inbound 22.
+  story_key_pair:
+    stack: config0-hub:::aws::ec2_keypair
+    arguments:
+      key_name: ssm-host-docker
+
+  # Order 1: create + record the dedicated Lambda-artifacts bucket for the
+  # executor install. cloud_tags_hash carries the labels bucket_vars matches on.
+  lambda_bucket:
+    stack: config0-hub:::aws_storage::aws_s3_bucket
+    arguments:
+      bucket: ssm-host-docker-lambda-artifacts-570017720022
+      force_destroy: true
+      cloud_tags_hash:
+        environment: dev
+        purpose: ssm-host-docker
+    # cloud_tags_hash is a `_hash`-convention arg: it must arrive
+    # base64-encoded (same pattern as the aws_vpc_simple config0.yaml).
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
+
+  # Order 2: the EventBridge-v2 SSM executor install. Its record
+  # (resource_type=ssm_ec2_exec_eventbridge_install) promotes
+  # state_machine_arn, bucket_name, payload_key_layout, instance_profile_name,
+  # managed_tag_key/managed_tag_value, and kms_key_arn - the single source the
+  # host order later reads.
+  ssm_executor_install:
+    stack: config0-hub:::aws::ssm_ec2_exec_eventbridge_install
+    dependencies:
+      - lambda_bucket
+    arguments:
+      s3_bucket: selector:::bucket_vars::s3_bucket
+      aws_region: ap-northeast-1
+    selectors:
+      - bucket_vars
+
+  # Order 3: the story-owned VPC with the SSM interface-endpoint opt-in.
+  # enable_ssm_endpoints creates the ssm/ssmmessages/ec2messages interface
+  # endpoints (private DNS on, 443 from the VPC CIDR) that a no-public-IP
+  # SSM-managed server needs.
+  story_vpc:
+    stack: config0-hub:::aws_networking::aws_vpc_simple
+    dependencies:
+      - story_key_pair
+    arguments:
+      vpc_name: ssm-host-docker-vpc
+      enable_ssm_endpoints: true
+      cloud_tags_hash:
+        environment: dev
+        purpose: ssm-host-docker
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
+
+  # Order 4: the PRIVATE application server - no public IP, no inbound SSH,
+  # private subnet. It consumes the executor's promoted instance profile and
+  # managed tag by selector (the default orchestrated_by=config0 tag does NOT
+  # satisfy the executor's SendCommand tag condition).
+  ssm_docker_host:
+    stack: config0-hub:::aws::aws_ec2_server
+    dependencies:
+      - story_vpc
+      - ssm_executor_install
+    arguments:
+      hostname: ssm-host-docker-01
+      ssh_key_name: selector:::keypair_vars::key_name
+      subnet_ids: selector:::network_vars::private_subnet_ids:csv
+      associate_public_ip_address: "false"
+      instance_type: t3.small
+      instance_profile_name: selector:::install_vars::instance_profile_name
+      managed_tag_key: selector:::install_vars::managed_tag_key
+      managed_tag_value: selector:::install_vars::managed_tag_value
+      cloud_tags_hash:
+        environment: dev
+        purpose: ssm-host-docker
+    selectors:
+      - keypair_vars
+      - network_vars
+      - install_vars
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
+
+  # Order 5: host configuration - install Docker on the private server through
+  # the SSM executor transport (host order fires, parks on exit 135, and
+  # finalizes off the S3 DoneResult marker).
+  docker_host_config:
+    stack: config0-hub:::ubuntu::docker_host_config
+    dependencies:
+      - ssm_docker_host
+    arguments:
+      hostname: ssm-host-docker-01
