@@ -91,7 +91,10 @@ stacks:
   # Order 3: the story-owned VPC with the SSM interface-endpoint opt-in.
   # enable_ssm_endpoints creates the ssm/ssmmessages/ec2messages interface
   # endpoints (private DNS on, 443 from the VPC CIDR) that a no-public-IP
-  # SSM-managed server needs.
+  # SSM-managed server needs. enable_nat_gateway creates one NAT gateway in
+  # the first public subnet and routes the private subnets' egress through
+  # it, since the docker_host_config stage below needs public package repos
+  # (apt/Docker) from the private-subnet host.
   story_vpc:
     stack: config0-hub:::aws_networking::aws_vpc_simple
     dependencies:
@@ -99,6 +102,7 @@ stacks:
     arguments:
       vpc_name: ssm-host-docker-vpc
       enable_ssm_endpoints: true
+      enable_nat_gateway: true
       cloud_tags_hash:
         environment: dev
         purpose: ssm-host-docker
