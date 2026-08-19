@@ -8,7 +8,9 @@
 # What is left is the business wiring: the RDS's own name/db, and the two required
 # ids read off the vars_set record via the platform's injected `network_vars` selector.
 # That vars_set is produced by `network-vars-set/config0.yaml` and must exist in this
-# tenant, under the same environment=dev / purpose=eval-config0 labels, before this runs.
+# tenant, under the same environment=dev / purpose=eval-config0 labels, before this runs -
+# and that vars_set must be created with evaluate: true, or the ids below resolve to raw
+# selector strings this schedule has no definition for.
 #
 # No labels: block here (unlike platform/vpc) - the platform's label groups replace any
 # group of the same name (D6), so writing them is redundant.
@@ -21,5 +23,6 @@ stacks:
     arguments:
       rds_name: eval-config0-platform-rds
       db_name: app
+      publish_creds: true
       sg_id: selector:::network_vars::db_sg_id
       subnet_ids: selector:::network_vars::private_subnet_ids

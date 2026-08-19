@@ -6,7 +6,8 @@
 #
 # Cluster ids come off the vars_set record through the injected `network_vars` selector,
 # so `network-vars-set/config0.yaml` must already have run in this tenant under the same
-# environment=dev / purpose=eval-config0 labels.
+# environment=dev / purpose=eval-config0 labels, with evaluate: true so the record holds
+# real ids rather than raw selector strings this schedule cannot resolve.
 #
 # eks_node_role_arn reads the injected `eks_info` selector, which matches the eks record
 # this same run writes back from the cluster substack - unresolved at Python mint, resolved
