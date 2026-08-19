@@ -1,0 +1,31 @@
+# Story 104 - deploy an EKS through the PLATFORM path (story 4 via platform definition).
+#
+# The platform owns aws_default_region and cloud_tags_hash for this child, plus the
+# `general` + `aws_cloud` label groups, the `network_vars` and `eks_info` selector
+# definitions, and the `infracost` inputvars set - none of them may appear here (D5/D8).
+#
+# Cluster ids come off the vars_set record through the injected `network_vars` selector,
+# so `network-vars-set/config0.yaml` must already have run in this tenant under the same
+# environment=dev / purpose=eval-config0 labels.
+#
+# eks_node_role_arn reads the injected `eks_info` selector, which matches the eks record
+# this same run writes back from the cluster substack - unresolved at Python mint, resolved
+# at Go dispatch. eks_node_group_subnet_ids / eks_node_capacity_type / eks_node_ami_type are
+# the aws_eks_nodegroup substack's required vars; eks_cluster_version and eks_node_ami_type
+# override defaults (1.25 / AL2_x86_64) that are too old to launch.
+
+platform: config0-hub:::devops-solutions::platform-eval-config0
+
+stacks:
+  eks:
+    stack_alias: aws_eks
+    arguments:
+      eks_cluster: eval-config0-platform-eks
+      eks_cluster_version: "1.35"
+      vpc_id: selector:::network_vars::vpc_id
+      eks_cluster_sg_id: selector:::network_vars::bastion_sg_id
+      eks_cluster_subnet_ids: selector:::network_vars::public_subnet_ids:csv
+      eks_node_group_subnet_ids: selector:::network_vars::private_subnet_ids:csv
+      eks_node_capacity_type: ON_DEMAND
+      eks_node_ami_type: AL2023_x86_64_STANDARD
+      eks_node_role_arn: selector:::eks_info::node_role_arn

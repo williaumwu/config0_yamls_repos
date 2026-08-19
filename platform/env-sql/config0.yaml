@@ -1,0 +1,24 @@
+# Story 105 - deploy the self-contained env_sql multistack through the PLATFORM path
+# (story 5 via platform definition).
+#
+# This is the catalogue at its most complete: env_sql's platform entry pre-sets every
+# piece of cross-resource wiring - vpc_id, vpc_name, db_sg_id, public/private_subnet_ids,
+# private_route_table_id, eks_cluster_sg_id, eks_node_role_arn, db_engine,
+# db_engine_version, netvars_set_labels_hash, netvars_set_arguments_hash - on top of
+# aws_default_region and cloud_tags_hash. All of those are platform-owned and must not
+# appear here (D5/D8). What is left is the environment's name plus two version choices
+# the catalogue does not pin.
+#
+# BLOCKED as of 2026-08-19: this child's catalogue carries the list form
+# at_launch: ["labels", "selectors"], which scan never expands, so the env_* children
+# are not launchable yet. See platform-stories-103-105.md in the work-log.
+
+platform: config0-hub:::devops-solutions::platform-eval-config0
+
+stacks:
+  env_3tier:
+    stack_alias: env_sql
+    arguments:
+      env_name: sql
+      eks_cluster_version: "1.35"
+      eks_node_ami_type: AL2023_x86_64_STANDARD
