@@ -1,0 +1,23 @@
+# Story 102 - deploy a VPC through the PLATFORM path.
+#
+# The developer opts into a platform with the top-level `platform:` key and then
+# names a child of that platform's frozen catalogue with `stack_alias:` instead
+# of an inline `stack:` FQN. The platform owns aws_default_region and
+# cloud_tags_hash for this child, plus its labels, selectors and inputvars - they
+# come from the catalogue, not from here. Setting a platform-owned key in this
+# file (in `arguments:` or in a `global: arguments:` block) is an error.
+#
+# The only argument below is the business one: the VPC's name.
+
+platform: config0-hub:::devops-solutions::platform-eval-config0
+
+labels:
+  general:
+    environment: dev
+    purpose: eval-config0
+
+stacks:
+  vpc:
+    stack_alias: aws_vpc_simple
+    arguments:
+      vpc_name: eval-config0-platform-vpc
