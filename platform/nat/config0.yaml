@@ -1,0 +1,20 @@
+# Story 102 companion - NAT through the PLATFORM path (aws_nat_inst_vpc child).
+#
+# Standalone, mirroring the original platform natgw config (flask_sample
+# 3edc2f5): the platform injects the network_vars selector (matches the
+# vars_set record), so this runs AFTER platform/vpc and network-vars-set.
+# Run order: platform/vpc -> network-vars-set -> platform/nat.
+# The platform owns aws_default_region and cloud_tags_hash.
+
+platform: config0-hub:::devops-solutions::platform-eval-config0
+
+stacks:
+  nat:
+    stack_alias: aws_nat_inst_vpc
+    arguments:
+      service_name: eval-config0-platform-nat
+      instance_types: t3.nano,t3a.nano
+      use_spot_instance: true
+      vpc_id: selector:::network_vars::vpc_id
+      public_subnet_ids: selector:::network_vars::public_subnet_ids:csv
+      private_route_table_id: selector:::network_vars::private_route_table_id

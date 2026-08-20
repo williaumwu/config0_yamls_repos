@@ -22,20 +22,3 @@ stacks:
     arguments:
       vpc_name: eval-config0-platform-vpc
 
-  # NAT via the platform catalogue (aws_nat_inst_vpc child), mirroring the
-  # original platform config (flask_sample 3edc2f5) and story 2's vpc+nat pair.
-  # Without it the private subnets have no route out and EKS worker nodes
-  # (story 104) cannot join the cluster. The platform owns aws_default_region +
-  # cloud_tags_hash and injects the network_vars selector; the selector
-  # expressions below resolve off the vars_set record, exactly as 3edc2f5 did.
-  nat:
-    stack_alias: aws_nat_inst_vpc
-    dependencies:
-      - vpc
-    arguments:
-      service_name: eval-config0-platform-nat
-      instance_types: t3.nano,t3a.nano
-      use_spot_instance: true
-      vpc_id: selector:::network_vars::vpc_id
-      public_subnet_ids: selector:::network_vars::public_subnet_ids:csv
-      private_route_table_id: selector:::network_vars::private_route_table_id
