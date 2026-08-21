@@ -1,0 +1,82 @@
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+
+labels:
+  general:
+    environment: dev
+    purpose: eval-config0
+  infrastructure:
+    cloud: aws
+    product: mongodb
+    area: database
+
+selectors:
+  network_vars:
+    match:
+      filter:
+        resource_type: vars_set
+      labels:
+        environment: dev
+        purpose: eval-config0
+        area: network
+        region: ap-northeast-1
+        provider: aws
+  sg_vars:
+    match:
+      filter:
+        resource_type: vars_set
+      labels:
+        environment: dev
+        purpose: eval-config0
+        area: network
+        region: ap-northeast-1
+        provider: aws
+  keypair_vars:
+    match:
+      filter:
+        resource_type: ssh_key_pair
+      labels:
+        environment: dev
+        purpose: ssm-host-docker
+  install_vars:
+    match:
+      filter:
+        resource_type: ssm_ec2_exec_eventbridge_install
+      labels:
+        environment: dev
+        purpose: ssm-host-docker
+
+stacks:
+  mongodb_replica:
+    stack: config0-hub:::mongodb::mongodb_replica_on_ec2
+    labels:
+      - general
+      - infrastructure
+    arguments:
+      mongodb_cluster: mongodb-cluster-dev
+      num_of_replicas: 3
+      vpc_id: selector:::network_vars::vpc_id
+      subnet_ids: selector:::network_vars::private_subnet_ids
+      sg_id: selector:::sg_vars::db_sg_id
+      ssh_key_name: selector:::keypair_vars::key_name
+      instance_profile_name: selector:::install_vars::instance_profile_name
+      managed_tag_key: selector:::install_vars::managed_tag_key
+      managed_tag_value: selector:::install_vars::managed_tag_value
+      instance_type: t3.micro
+      cloud_tags_hash:
+        environment: dev
+        purpose: eval-config0
+        database: mongodb
+        product: ec2
+        database_type: nosql
+    selectors:
+      - network_vars
+      - sg_vars
+      - keypair_vars
+      - install_vars
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
