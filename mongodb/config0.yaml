@@ -15,23 +15,22 @@ selectors:
   network_vars:
     match:
       filter:
-        resource_type: vars_set
+        resource_type: vpc
       labels:
         environment: dev
-        purpose: eval-config0
+        purpose: ssm-host-docker
         area: network
         region: ap-northeast-1
-        provider: aws
+        cloud: aws
   sg_vars:
     match:
       filter:
-        resource_type: vars_set
+        resource_type: security_group
       labels:
         environment: dev
-        purpose: eval-config0
+        purpose: ssm-host-docker
         area: network
-        region: ap-northeast-1
-        provider: aws
+        cloud: aws
   keypair_vars:
     match:
       filter:
