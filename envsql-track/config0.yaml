@@ -49,6 +49,7 @@ stacks:
       db_sg_id: selector:::sg_vars::db_sg_id
       eks_cluster_sg_id: selector:::sg_vars::bastion_sg_id
       db_engine: MySQL
+      db_name: app
       db_engine_version: "8.0.46"
       db_allocated_storage: 14
       db_instance_class: db.t3.micro
