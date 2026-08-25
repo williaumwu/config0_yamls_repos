@@ -1,6 +1,6 @@
 global:
   arguments:
-    aws_default_region: eu-west-1
+    aws_default_region: ap-northeast-1
 
 # Story 09 - self-contained multistack, the NoSQL twin of story 05 (env_sql).
 # env_nosql's `network` substack builds its own nosql-vpc (+ subnets, route tables,
@@ -60,7 +60,7 @@ stacks:
       - general
     arguments:
       env_name: evalnosql
-      aws_default_region: eu-west-1
+      aws_default_region: ap-northeast-1
       vpc_id: selector:::vpc_info::vpc_id
       public_subnet_ids: selector:::vpc_info::public_subnet_ids:csv
       private_subnet_ids: selector:::vpc_info::private_subnet_ids:csv
