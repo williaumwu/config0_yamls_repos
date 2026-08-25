@@ -46,8 +46,7 @@ selectors:
 stacks:
   rds:
     stack: williaumwu:::config0-e2e-authoring::rds
-    # explicit per-stack label references — the stack names the label groups it
-    # wants (target syntax; parser ignores it today — that's fine).
+    # the stack carries exactly the top-level labels its own list names
     labels:
       - general
       - infrastructure
