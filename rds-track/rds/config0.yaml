@@ -1,0 +1,76 @@
+global:
+  arguments:
+    aws_default_region: eu-west-1
+
+labels:
+  general:
+    environment: dev
+    purpose: eval-rds
+  infrastructure:
+    cloud: aws
+    product: rds
+    area: database
+
+# Explicit selectors section — named selector definitions live under this key,
+# distinct from labels (work order WO-2: the original parser read an explicit
+# top-level `selectors:` key; the rewrite must restore it instead of guessing
+# from bare top-level keys with a match: sub-key).
+selectors:
+  # network_vars matches the VPC resource record (it alone carries labels_region).
+  # vpc_simple promotes every terraform output onto that record, so vpc_name +
+  # private_subnet_ids read off it. These are part-1's VPC records.
+  network_vars:
+    match:
+      filter:
+        resource_type: vpc
+      labels:
+        environment: dev
+        purpose: eval-rds
+        area: network
+        region: eu-west-1
+        cloud: aws
+
+  # sg_vars matches the security_group record — a SEPARATE record from the VPC.
+  # db_sg_id is a terraform output on this record only, so it needs its own
+  # resource_type-keyed selector.
+  sg_vars:
+    match:
+      filter:
+        resource_type: security_group
+      labels:
+        environment: dev
+        purpose: eval-rds
+        area: network
+        cloud: aws
+
+stacks:
+  rds:
+    stack: williaumwu:::config0-e2e-authoring::rds
+    # explicit per-stack label references — the stack names the label groups it
+    # wants (target syntax; parser ignores it today — that's fine).
+    labels:
+      - general
+      - infrastructure
+    arguments:
+      # RDS-to-VPC wiring — kept exactly as the config0_yamls_repos rds scenario:
+      vpc_name: selector:::network_vars::vpc_name
+      sg_id: selector:::sg_vars::db_sg_id
+      subnet_ids: selector:::network_vars::private_subnet_ids
+      rds_name: eval-rds-rds
+      allocated_storage: 14
+      db_name: app
+      engine_version: "8.0.46"
+      publish_creds: true
+      # _hash convention: authored as a dictionary, delivered to the worker as a
+      # base64 string via spec.serialization.to_base64 below.
+      cloud_tags_hash:
+        environment: dev
+        purpose: eval-rds
+    selectors:
+      - network_vars
+      - sg_vars
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash

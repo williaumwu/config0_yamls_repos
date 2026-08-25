@@ -1,0 +1,64 @@
+global:
+  arguments:
+    aws_default_region: eu-west-1
+
+labels:
+  general:
+    environment: dev
+    purpose: eval-multistack
+  infrastructure:
+    cloud: aws
+    area: network
+
+# network_vars matches the VPC resource record (it alone carries labels_region);
+# vpc_name + private_subnet_ids are terraform outputs promoted onto it.
+network_vars:
+  match:
+    labels:
+      environment: dev
+      purpose: eval-multistack
+      area: network
+      region: eu-west-1
+      cloud: aws
+
+# sg_vars matches the security_group record — db_sg_id is a terraform output there,
+# not on the VPC record, so it needs a resource_type-keyed selector of its own.
+sg_vars:
+  match:
+    filter:
+      resource_type: security_group
+    labels:
+      environment: dev
+      purpose: eval-multistack
+      area: network
+      cloud: aws
+
+stacks:
+  vpc:
+    stack: config0-hub:::aws_networking::aws_vpc_simple
+    arguments:
+      vpc_name: eval-multistack-vpc
+      eks_cluster: eval-multistack-eks
+      cloud_tags_hash:
+        environment: dev
+        purpose: eval-multistack
+  rds:
+    stack: config0-hub:::aws_storage::aws_rds
+    dependencies:
+      - vpc
+    arguments:
+      vpc_name: selector:::network_vars::vpc_name
+      sg_id: selector:::sg_vars::db_sg_id
+      subnet_ids: selector:::network_vars::private_subnet_ids
+      rds_name: eval-multistack-rds
+      allocated_storage: 14
+      db_name: app
+      publish_creds: true
+      cloud_tags_hash:
+        environment: dev
+        purpose: eval-multistack
+    selectors:
+      - network_vars
+      - sg_vars
+    connections:
+      - reference: dev1

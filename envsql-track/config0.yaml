@@ -1,0 +1,67 @@
+global:
+  arguments:
+    aws_default_region: eu-west-1
+
+# Story 05 - self-contained multistack. env_sql's `network` substack builds its own
+# sql-vpc (+ subnets, route tables, security groups, network_vars_set, NAT instance),
+# then `rds_eks` builds the RDS + EKS. purpose: eval-envsql namespaces these resources
+# apart from the other eval stories. The selectors below query env_sql's OWN
+# in-run resources (skip-and-leave at Python mint, resolve at Go dispatch after the
+# network substack writes them back).
+labels:
+  general:
+    environment: dev
+    purpose: eval-envsql
+
+selectors:
+  vpc_info:
+    match:
+      filter:
+        resource_type: vpc
+      labels:
+        environment: dev
+        purpose: eval-envsql
+      expect:
+        optional: true
+
+  sg_vars:
+    match:
+      filter:
+        resource_type: security_group
+      labels:
+        environment: dev
+        purpose: eval-envsql
+      expect:
+        optional: true
+
+stacks:
+  env_3tier:
+    stack: config0-hub:::devops-solutions::env_sql
+    labels:
+      - general
+    arguments:
+      env_name: sql
+      aws_default_region: eu-west-1
+      vpc_id: selector:::vpc_info::vpc_id
+      public_subnet_ids: selector:::vpc_info::public_subnet_ids:csv
+      private_subnet_ids: selector:::vpc_info::private_subnet_ids:csv
+      private_route_table_id: selector:::vpc_info::private_route_table_id
+      db_sg_id: selector:::sg_vars::db_sg_id
+      eks_cluster_sg_id: selector:::sg_vars::bastion_sg_id
+      db_engine: MySQL
+      db_engine_version: "8.0.46"
+      db_allocated_storage: 14
+      db_instance_class: db.t3.micro
+      eks_cluster_version: "1.35"
+      eks_node_ami_type: AL2023_x86_64_STANDARD
+      cloud_tags_hash:
+        environment: dev
+        purpose: eval-envsql
+    selectors:
+      - vpc_info
+      - sg_vars
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
