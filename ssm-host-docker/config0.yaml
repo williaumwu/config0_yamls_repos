@@ -60,6 +60,9 @@ stacks:
   # only because aws_ec2_server requires one - no SG opens inbound 22.
   story_key_pair:
     stack: config0-hub:::aws::ec2_keypair
+    labels:
+      - general
+      - infrastructure
     arguments:
       key_name: ssm-host-docker
 
@@ -67,6 +70,9 @@ stacks:
   # executor install. cloud_tags_hash carries the labels bucket_vars matches on.
   lambda_bucket:
     stack: config0-hub:::aws_storage::aws_s3_bucket
+    labels:
+      - general
+      - infrastructure
     arguments:
       bucket: ssm-host-docker-lambda-artifacts-570017720022
       force_destroy: true
@@ -88,6 +94,9 @@ stacks:
   # host order later reads.
   ssm_executor_install:
     stack: config0-hub:::aws::ssm_ec2_exec_eventbridge_install
+    labels:
+      - general
+      - infrastructure
     dependencies:
       - lambda_bucket
     arguments:
@@ -106,6 +115,9 @@ stacks:
   # (apt/Docker) from the private-subnet host.
   story_vpc:
     stack: config0-hub:::aws_networking::aws_vpc_simple
+    labels:
+      - general
+      - infrastructure
     dependencies:
       - story_key_pair
     arguments:
@@ -127,6 +139,9 @@ stacks:
   # satisfy the executor's SendCommand tag condition).
   ssm_docker_host:
     stack: config0-hub:::aws::aws_ec2_server
+    labels:
+      - general
+      - infrastructure
     dependencies:
       - story_vpc
       - ssm_executor_install
@@ -157,6 +172,9 @@ stacks:
   # finalizes off the S3 DoneResult marker).
   docker_host_config:
     stack: config0-hub:::ubuntu::docker_host_config
+    labels:
+      - general
+      - infrastructure
     dependencies:
       - ssm_docker_host
     arguments:

@@ -36,6 +36,9 @@ sg_vars:
 stacks:
   vpc:
     stack: config0-hub:::aws_networking::aws_vpc_simple
+    labels:
+      - general
+      - infrastructure
     arguments:
       vpc_name: eval-config0-vpc-simple
       eks_cluster: eval-config0-eks
@@ -44,6 +47,9 @@ stacks:
         purpose: eval-config0
   rds:
     stack: config0-hub:::aws_storage::aws_rds
+    labels:
+      - general
+      - infrastructure
     dependencies:
       - vpc
     arguments:

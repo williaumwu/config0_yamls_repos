@@ -29,6 +29,9 @@ selectors:
 stacks:
   vpc:
     stack: config0-hub:::aws_networking::aws_vpc_simple
+    labels:
+      - general
+      - infrastructure
     arguments:
       vpc_name: eval-eks-vpc
       eks_cluster: eval-eks-eks
@@ -43,6 +46,9 @@ stacks:
 
   nat:
     stack: config0-hub:::aws_networking::aws_nat_inst_vpc
+    labels:
+      - general
+      - infrastructure
     # explicit stack-level dependency (config0.yaml `dependencies:` key) — the
     # nat stack's selectors read the vpc resource record, so it must run after
     # the vpc stack writes back in this same run.

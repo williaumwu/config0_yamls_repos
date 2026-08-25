@@ -26,6 +26,8 @@ stacks:
   # carries the labels that bucket_vars matches on.
   lambda_bucket:
     stack: config0-hub:::aws_storage::aws_s3_bucket
+    labels:
+      - general
     arguments:
       bucket: ssm-ec2-exec-eventbridge-lambda-artifacts-570017720022
       force_destroy: true
@@ -49,6 +51,8 @@ stacks:
   # back, so the selector resolves in the same run.
   ssm_v2_install:
     stack: config0-hub:::aws::ssm_ec2_exec_eventbridge_install
+    labels:
+      - general
     dependencies:
       - lambda_bucket
     arguments:

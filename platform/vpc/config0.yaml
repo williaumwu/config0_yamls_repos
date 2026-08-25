@@ -19,6 +19,8 @@ labels:
 stacks:
   vpc:
     stack_alias: aws_vpc_simple
+    labels:
+      - general
     arguments:
       vpc_name: eval-config0-platform-vpc
 

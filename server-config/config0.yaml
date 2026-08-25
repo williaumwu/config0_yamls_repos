@@ -24,12 +24,12 @@ labels:
   general:
     purpose: server-configuration
     managed_by: config0
-  infrastructure:
+  infrastructure_ssm:
     cloud: aws
     area: server-config
     product: ssm-ec2-exec
     region: ap-northeast-1
-  keypair_infrastructure:
+  infrastructure_keypair:
     cloud: aws
     area: server-config
     product: ssh-key-pair
@@ -51,7 +51,7 @@ stacks:
     stack: config0-hub:::aws::ec2_keypair
     labels:
       - general
-      - keypair_infrastructure
+      - infrastructure_keypair
     arguments:
       key_name: server-config-apne1
 
@@ -60,7 +60,7 @@ stacks:
     stack: config0-hub:::aws_storage::aws_s3_bucket
     labels:
       - general
-      - infrastructure
+      - infrastructure_ssm
     arguments:
       bucket: server-config-lambda-artifacts-570017720022
       force_destroy: true
@@ -84,7 +84,7 @@ stacks:
     stack: config0-hub:::aws::ssm_ec2_exec_eventbridge_install
     labels:
       - general
-      - infrastructure
+      - infrastructure_ssm
     dependencies:
       - lambda_bucket
     arguments:
