@@ -1,3 +1,11 @@
+# Story 07 - the INSTALL TEST for the EventBridge SSM executor. It installs its
+# own key pair, bucket and executor under purpose: ssm-host-docker so the test
+# is self-contained and can run next to the other stories.
+#
+# server-config/config0.yaml is the production-shaped install of the same two
+# stacks: region-level, run once per region after onboarding, read by every
+# server-configuring stack under purpose: server-configuration.
+
 global:
   arguments:
     aws_default_region: ap-northeast-1

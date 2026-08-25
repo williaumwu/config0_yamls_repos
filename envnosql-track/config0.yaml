@@ -35,6 +35,24 @@ selectors:
       expect:
         optional: true
 
+  # Region prerequisites, installed once by server-config/config0.yaml. No
+  # bastion host: the MongoDB replicas are configured over the SSM executor.
+  keypair_vars:
+    match:
+      filter:
+        resource_type: ssh_key_pair
+      labels:
+        purpose: server-configuration
+        region: ap-northeast-1
+
+  install_vars:
+    match:
+      filter:
+        resource_type: ssm_ec2_exec_eventbridge_install
+      labels:
+        purpose: server-configuration
+        region: ap-northeast-1
+
 stacks:
   env_3tier_nosql:
     stack: config0-hub:::devops-solutions::env_nosql
@@ -48,9 +66,11 @@ stacks:
       private_subnet_ids: selector:::vpc_info::private_subnet_ids:csv
       private_route_table_id: selector:::vpc_info::private_route_table_id
       db_sg_id: selector:::sg_vars::db_sg_id
-      bastion_sg_id: selector:::sg_vars::bastion_sg_id
-      bastion_subnet_ids: selector:::vpc_info::public_subnet_ids
       eks_cluster_sg_id: selector:::sg_vars::bastion_sg_id
+      ssh_key_name: selector:::keypair_vars::key_name
+      instance_profile_name: selector:::install_vars::instance_profile_name
+      managed_tag_key: selector:::install_vars::managed_tag_key
+      managed_tag_value: selector:::install_vars::managed_tag_value
       mongodb_num_of_replicas: 3
       mongodb_instance_type: t3.micro
       mongodb_disksize: 25
@@ -59,8 +79,6 @@ stacks:
       mongodb_password: admin123
       mongodb_ami_filter: ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*
       mongodb_ami_owner: "099720109477"
-      bastion_ami_filter: ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*
-      bastion_ami_owner: "099720109477"
       eks_cluster_version: "1.35"
       eks_node_ami_type: AL2023_x86_64_STANDARD
       cloud_tags_hash:
@@ -69,6 +87,8 @@ stacks:
     selectors:
       - vpc_info
       - sg_vars
+      - keypair_vars
+      - install_vars
     spec:
       serialization:
         to_base64:

@@ -31,20 +31,21 @@ selectors:
         purpose: ssm-host-docker
         area: network
         cloud: aws
+  # Region prerequisites, installed once by server-config/config0.yaml.
   keypair_vars:
     match:
       filter:
         resource_type: ssh_key_pair
       labels:
-        environment: dev
-        purpose: ssm-host-docker
+        purpose: server-configuration
+        region: ap-northeast-1
   install_vars:
     match:
       filter:
         resource_type: ssm_ec2_exec_eventbridge_install
       labels:
-        environment: dev
-        purpose: ssm-host-docker
+        purpose: server-configuration
+        region: ap-northeast-1
 
 stacks:
   mongodb_replica:
