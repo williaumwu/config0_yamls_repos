@@ -24,6 +24,10 @@ No environment label - these are region-scoped, not environment-scoped.
 `ssm-host-docker/` (story 07) installs the same two stacks under its own
 `purpose: ssm-host-docker`; that story is the install test, not the production install.
 
+Every host-order stack must pass `install_name` matching the install record it depends on
+(`server-config` for the region prerequisite; story 07 uses its own `install_name: story07`),
+because discovery raises when two installs exist in one region.
+
 ## Parallel tracks
 
 Each track has its own `purpose` label and its own resource names, so tracks can run at the same

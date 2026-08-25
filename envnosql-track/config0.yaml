@@ -71,6 +71,7 @@ stacks:
       instance_profile_name: selector:::install_vars::instance_profile_name
       managed_tag_key: selector:::install_vars::managed_tag_key
       managed_tag_value: selector:::install_vars::managed_tag_value
+      install_name: server-config
       mongodb_num_of_replicas: 3
       mongodb_instance_type: t3.micro
       mongodb_disksize: 25

@@ -64,6 +64,7 @@ stacks:
       managed_tag_key: selector:::install_vars::managed_tag_key
       managed_tag_value: selector:::install_vars::managed_tag_value
       instance_type: t3.micro
+      install_name: server-config
       cloud_tags_hash:
         environment: dev
         purpose: eval-config0

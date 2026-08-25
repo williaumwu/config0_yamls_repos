@@ -161,3 +161,4 @@ stacks:
       - ssm_docker_host
     arguments:
       hostname: ssm-host-docker-01
+      install_name: story07
