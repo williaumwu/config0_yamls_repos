@@ -11,5 +11,6 @@ time without their selectors matching each other's records.
 | `multistack-track/` | `eval-multistack` | single run |
 | `vpc-track/` | `eval-vpc` | single run, runs in parallel with the other tracks |
 | `envsql-track/` | `eval-envsql` | single run (`env_name: evalsql`, kept distinct from `platform/env-sql`) |
+| `envnosql-track/` | `eval-envnosql` | single run (`env_name: evalnosql`, MongoDB replica + EKS, story 09) |
 | `platform/` | `eval-config0` | one sequential track: `vpc` -> `network-vars-set` -> `nat` -> `rds` -> `eks` |
 | `platform/env-sql/` | `eval-config0` | single run, story 105, passing as of 2026-08-20 |

@@ -1,0 +1,76 @@
+global:
+  arguments:
+    aws_default_region: eu-west-1
+
+# Story 09 - self-contained multistack, the NoSQL twin of story 05 (env_sql).
+# env_nosql's `network` substack builds its own nosql-vpc (+ subnets, route tables,
+# security groups, network_vars_set, NAT instance), then `mongodb_eks` builds the
+# MongoDB replica set + EKS. purpose: eval-envnosql namespaces these resources apart
+# from the other eval stories, so this track runs at the same time as them.
+# The selectors below query env_nosql's OWN in-run resources (skip-and-leave at
+# Python mint, resolve at Go dispatch after the network substack writes them back).
+labels:
+  general:
+    environment: dev
+    purpose: eval-envnosql
+
+selectors:
+  vpc_info:
+    match:
+      filter:
+        resource_type: vpc
+      labels:
+        environment: dev
+        purpose: eval-envnosql
+      expect:
+        optional: true
+
+  sg_vars:
+    match:
+      filter:
+        resource_type: security_group
+      labels:
+        environment: dev
+        purpose: eval-envnosql
+      expect:
+        optional: true
+
+stacks:
+  env_3tier_nosql:
+    stack: config0-hub:::devops-solutions::env_nosql
+    labels:
+      - general
+    arguments:
+      env_name: evalnosql
+      aws_default_region: eu-west-1
+      vpc_id: selector:::vpc_info::vpc_id
+      public_subnet_ids: selector:::vpc_info::public_subnet_ids:csv
+      private_subnet_ids: selector:::vpc_info::private_subnet_ids:csv
+      private_route_table_id: selector:::vpc_info::private_route_table_id
+      db_sg_id: selector:::sg_vars::db_sg_id
+      bastion_sg_id: selector:::sg_vars::bastion_sg_id
+      bastion_subnet_ids: selector:::vpc_info::public_subnet_ids
+      eks_cluster_sg_id: selector:::sg_vars::bastion_sg_id
+      mongodb_num_of_replicas: 3
+      mongodb_instance_type: t3.micro
+      mongodb_disksize: 25
+      mongodb_volume_size: 25
+      mongodb_username: admin123
+      mongodb_password: admin123
+      mongodb_ami_filter: ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*
+      mongodb_ami_owner: "099720109477"
+      bastion_ami_filter: ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*
+      bastion_ami_owner: "099720109477"
+      eks_cluster_version: "1.35"
+      eks_node_ami_type: AL2023_x86_64_STANDARD
+      cloud_tags_hash:
+        environment: dev
+        purpose: eval-envnosql
+    selectors:
+      - vpc_info
+      - sg_vars
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
