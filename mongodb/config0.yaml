@@ -5,7 +5,7 @@ global:
 labels:
   general:
     environment: dev
-    purpose: eval-config0
+    purpose: eval-mongodb
   infrastructure:
     cloud: aws
     product: mongodb
