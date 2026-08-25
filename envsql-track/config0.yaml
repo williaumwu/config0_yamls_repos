@@ -40,7 +40,7 @@ stacks:
     labels:
       - general
     arguments:
-      env_name: sql
+      env_name: evalsql
       aws_default_region: eu-west-1
       vpc_id: selector:::vpc_info::vpc_id
       public_subnet_ids: selector:::vpc_info::public_subnet_ids:csv

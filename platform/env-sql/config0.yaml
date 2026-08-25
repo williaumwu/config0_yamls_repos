@@ -9,9 +9,9 @@
 # appear here (D5/D8). What is left is the environment's name plus two version choices
 # the catalogue does not pin.
 #
-# BLOCKED as of 2026-08-19: this child's catalogue carries the list form
-# at_launch: ["labels", "selectors"], which scan never expands, so the env_* children
-# are not launchable yet. See platform-stories-103-105.md in the work-log.
+# Story 105 PASSED 2026-08-20. The child catalogue's list form
+# at_launch: ["labels", "selectors"] is expanded by scan, so the env_* children launch.
+# See platform-stories-103-105.md in the work-log.
 
 platform: config0-hub:::devops-solutions::platform-eval-config0
 
