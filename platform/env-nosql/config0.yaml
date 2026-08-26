@@ -9,7 +9,7 @@
 # cloud_tags_hash. All of those are platform-owned and must not appear here (D5/D8) -
 # including aws_default_region, so this file has no `global:` block.
 #
-# PRECONDITION: the server-config-euw1 install (server-config-euw1/config0.yaml) must
+# PRECONDITION: the server-euw1 install (server-config-euw1/config0.yaml) must
 # already be installed in the PLATFORM's region (eu-west-1), not the ap-northeast-1
 # server-config install. The catalogue's keypair_vars / install_vars selectors match
 # `purpose: server-configuration` + `region: eu-west-1`.

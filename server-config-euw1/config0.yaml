@@ -1,6 +1,6 @@
 # The eu-west-1 install of the region-level server-configuration prerequisite.
 # Run this ONCE, right after onboarding, before any story that configures a server
-# in eu-west-1. Install name: server-config-euw1.
+# in eu-west-1. Install name: server-euw1 (terraform caps install_name at 15 chars).
 #
 # The platform (config0-hub:::devops-solutions::platform-eval-config0) pins
 # aws_default_region: eu-west-1, so platform stories that configure servers (109)
@@ -95,6 +95,6 @@ stacks:
     arguments:
       s3_bucket: selector:::bucket_vars::s3_bucket
       aws_region: eu-west-1
-      install_name: server-config-euw1
+      install_name: server-euw1
     selectors:
       - bucket_vars
