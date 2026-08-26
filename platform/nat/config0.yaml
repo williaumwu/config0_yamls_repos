@@ -14,7 +14,6 @@ stacks:
     arguments:
       service_name: eval-config0-platform-nat
       instance_types: t3.nano,t3a.nano
-      use_spot_instance: true
       vpc_id: selector:::network_vars::vpc_id
       public_subnet_ids: selector:::network_vars::public_subnet_ids:csv
       private_route_table_id: selector:::network_vars::private_route_table_id
