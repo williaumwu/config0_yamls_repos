@@ -14,6 +14,11 @@
 # server-config install. The catalogue's keypair_vars / install_vars selectors match
 # `purpose: server-configuration` + `region: eu-west-1`.
 #
+# The catalogue puts this child in its own `purpose: eval-config0-nosql` namespace
+# (105/env_sql stays on `purpose: eval-config0-env`), so 109's records and its five
+# forward selectors can never cross-match a live 105. keypair_vars / install_vars stay
+# on `purpose: server-configuration`.
+#
 # Status: never run.
 
 platform: config0-hub:::devops-solutions::platform-eval-config0

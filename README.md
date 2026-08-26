@@ -52,4 +52,4 @@ time without their selectors matching each other's records.
 | `envnosql-track/` | `eval-envnosql` | single run (`env_name: evalnosql`, MongoDB replica + EKS, story 09). Needs `server-config` in the region. |
 | `platform/` | `eval-config0` | one sequential track: `vpc` -> `network-vars-set` -> `nat` -> `rds` -> `eks` |
 | `platform/env-sql/` | `eval-config0-env` | single run, story 105, passing as of 2026-08-20. Self-contained: brings its own network substack, depends on none of 102-104. |
-| `platform/env-nosql/` | `eval-config0-env` | single run, story 109 (`env_name: nosql`), never run. Self-contained the same way, depends on none of 102-105. Needs the `server-euw1` install (`server-config-euw1/`) in the platform's region (eu-west-1). |
+| `platform/env-nosql/` | `eval-config0-nosql` | single run, story 109 (`env_name: nosql`), never run. Self-contained the same way in its own purpose namespace, so a live 105 never satisfies its checks; depends on none of 102-105. Needs the `server-euw1` install (`server-config-euw1/`) in the platform's region (eu-west-1). |
