@@ -1,6 +1,6 @@
 global:
   arguments:
-    aws_default_region: eu-west-1
+    aws_default_region: us-west-2
 
 labels:
   general:
@@ -18,7 +18,7 @@ network_vars:
       environment: dev
       purpose: eval-multistack
       area: network
-      region: eu-west-1
+      region: us-west-2
       cloud: aws
 
 # sg_vars matches the security_group record — db_sg_id is a terraform output there,

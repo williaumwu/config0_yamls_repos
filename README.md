@@ -53,3 +53,18 @@ time without their selectors matching each other's records.
 | `platform/` | `eval-config0` | one sequential track: `vpc` -> `network-vars-set` -> `nat` -> `rds` -> `eks` |
 | `platform/env-sql/` | `eval-config0-env` | single run, story 105, passing as of 2026-08-20. Self-contained: brings its own network substack, depends on none of 102-104. |
 | `platform/env-nosql/` | `eval-config0-nosql` | single run, story 109 (`env_name: nosql`), never run. Self-contained the same way in its own purpose namespace, so a live 105 never satisfies its checks; depends on none of 102-105. Needs the `server-euw1` install (`server-config-euw1/`) in the platform's region (eu-west-1). |
+
+## Regions
+
+AWS allows 5 VPCs per region by default, so the parallel tracks are spread across four
+regions rather than piled into one. Each region below stays at 3 VPCs or fewer.
+
+| Region | Tracks | VPCs created |
+|---|---|---|
+| `ap-northeast-1` | `server-config/` (0), `ssm-host-docker/` (1), `mongodb/` (0), `workspace-isolation/` + `workspace-two-calls/` (0), `envnosql-track/` (1, via env_nosql's network substack) | 2 |
+| `ap-southeast-1` | `vpc-track/` (1), `rds-track/` (1), `eks-track/` (1) | 3 |
+| `eu-west-1` | `server-config-euw1/` (0), `platform/` (1), `platform/env-sql/` (1), `platform/env-nosql/` (1) | 3 |
+| `us-west-2` | `multistack-track/` (1), `envsql-track/` (1), `ssm-ec2-exec-eventbridge-longbuild/` (1) | 3 |
+
+`platform/` pins `aws_default_region: eu-west-1` in its own stack, so the platform stories
+stay in eu-west-1 and read the `server-euw1` install.

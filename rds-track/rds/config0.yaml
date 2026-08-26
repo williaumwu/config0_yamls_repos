@@ -1,6 +1,6 @@
 global:
   arguments:
-    aws_default_region: eu-west-1
+    aws_default_region: ap-southeast-1
 
 labels:
   general:
@@ -27,7 +27,7 @@ selectors:
         environment: dev
         purpose: eval-rds
         area: network
-        region: eu-west-1
+        region: ap-southeast-1
         cloud: aws
 
   # sg_vars matches the security_group record — a SEPARATE record from the VPC.

@@ -1,6 +1,6 @@
 global:
   arguments:
-    aws_default_region: ap-northeast-1
+    aws_default_region: us-west-2
 
 labels:
   general:
@@ -39,7 +39,7 @@ selectors:
         environment: dev
         purpose: ssm-ec2-exec-eventbridge-longbuild
         area: network
-        region: ap-northeast-1
+        region: us-west-2
         cloud: aws
   sg_vars:
     match:
@@ -122,7 +122,7 @@ stacks:
       - lambda_bucket
     arguments:
       s3_bucket: selector:::bucket_vars::s3_bucket
-      aws_region: ap-northeast-1
+      aws_region: us-west-2
       # LONGBUILD: prove the deadline-driven done-marker watch. slowtest runs the
       # real build then pads with a sleep, so the CodeBuild build genuinely runs
       # past 15 minutes - the case the retired hard 900s watch cap made

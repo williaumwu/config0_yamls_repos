@@ -1,6 +1,6 @@
 global:
   arguments:
-    aws_default_region: eu-west-1
+    aws_default_region: ap-southeast-1
 
 labels:
   general:

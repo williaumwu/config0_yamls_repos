@@ -1,6 +1,6 @@
 global:
   arguments:
-    aws_default_region: eu-west-1
+    aws_default_region: us-west-2
 
 # Story 05 - self-contained multistack. env_sql's `network` substack builds its own
 # sql-vpc (+ subnets, route tables, security groups, network_vars_set, NAT instance),
@@ -41,7 +41,7 @@ stacks:
       - general
     arguments:
       env_name: evalsql
-      aws_default_region: eu-west-1
+      aws_default_region: us-west-2
       vpc_id: selector:::vpc_info::vpc_id
       public_subnet_ids: selector:::vpc_info::public_subnet_ids:csv
       private_subnet_ids: selector:::vpc_info::private_subnet_ids:csv
