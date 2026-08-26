@@ -24,9 +24,18 @@ No environment label - these are region-scoped, not environment-scoped.
 `ssm-host-docker/` (story 07) installs the same two stacks under its own
 `purpose: ssm-host-docker`; that story is the install test, not the production install.
 
-Every host-order stack must pass `install_name` matching the install record it depends on
-(`server-config` for the region prerequisite; story 07 uses its own `install_name: story07`),
+Every host-order stack must pass `install_name` matching the install record it depends on,
 because discovery raises when two installs exist in one region.
+
+| Install | Folder | Region | Install name | Stories that read it |
+|---|---|---|---|---|
+| region prerequisite (ap-northeast-1) | `server-config/` | `ap-northeast-1` | `server-config` | 07, 08, 09 |
+| region prerequisite (eu-west-1) | `server-config-euw1/` | `eu-west-1` | `server-config-euw1` | 109 |
+
+Story 07 is the install test and uses its own `install_name: story07`, not either row above.
+Stories 07, 08 and 09 run in `ap-northeast-1`, so they need the `server-config` install.
+Story 109 runs through the platform, which pins `aws_default_region: eu-west-1`, so it needs
+the `server-config-euw1` install instead.
 
 ## Parallel tracks
 
@@ -43,4 +52,4 @@ time without their selectors matching each other's records.
 | `envnosql-track/` | `eval-envnosql` | single run (`env_name: evalnosql`, MongoDB replica + EKS, story 09). Needs `server-config` in the region. |
 | `platform/` | `eval-config0` | one sequential track: `vpc` -> `network-vars-set` -> `nat` -> `rds` -> `eks` |
 | `platform/env-sql/` | `eval-config0` | single run, story 105, passing as of 2026-08-20 |
-| `platform/env-nosql/` | `eval-config0` | single run, story 106 (`env_name: nosql`), never run. Needs `server-config` in the platform's region (eu-west-1). |
+| `platform/env-nosql/` | `eval-config0` | single run, story 109 (`env_name: nosql`), never run. Needs the `server-config-euw1` install in the platform's region (eu-west-1). |

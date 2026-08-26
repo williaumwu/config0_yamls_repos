@@ -1,0 +1,100 @@
+# The eu-west-1 install of the region-level server-configuration prerequisite.
+# Run this ONCE, right after onboarding, before any story that configures a server
+# in eu-west-1. Install name: server-config-euw1.
+#
+# The platform (config0-hub:::devops-solutions::platform-eval-config0) pins
+# aws_default_region: eu-west-1, so platform stories that configure servers (109)
+# read THIS install, not the ap-northeast-1 one in server-config/. A per-region
+# install is the design, not duplication: the key pair and the EventBridge SSM
+# executor are both regional resources, and consuming stacks select on
+# purpose: server-configuration + region.
+#
+# It installs the two things every stack that CONFIGURES a server needs before it
+# can reach that server: an EC2 key pair and the EventBridge SSM executor. Any
+# stack that runs commands on a host (mongodb today, redpanda later) reads these
+# by selector on purpose: server-configuration + region.
+#
+# This is NEVER a substack of an environment stack. It is region-scoped, not
+# environment-scoped, which is why it carries no environment label.
+#
+# This replaces the .original bastion host: no public SSH host, no inbound 22, no
+# per-environment jump box to keep patched. Commands travel over SSM instead. That
+# is a deliberate improvement on .original, not an accidental divergence.
+
+global:
+  arguments:
+    aws_default_region: eu-west-1
+
+labels:
+  general:
+    purpose: server-configuration
+    managed_by: config0
+  infrastructure_ssm:
+    cloud: aws
+    area: server-config
+    product: ssm-ec2-exec
+    region: eu-west-1
+  infrastructure_keypair:
+    cloud: aws
+    area: server-config
+    product: ssh-key-pair
+    region: eu-west-1
+
+selectors:
+  bucket_vars:
+    match:
+      filter:
+        resource_type: cloud_storage
+      labels:
+        purpose: server-configuration
+        region: eu-west-1
+
+stacks:
+  # The region's shared EC2 key pair. aws_ec2_server requires a key pair even
+  # when nothing opens inbound 22.
+  keypair:
+    stack: config0-hub:::aws::ec2_keypair
+    labels:
+      - general
+      - infrastructure_keypair
+    arguments:
+      key_name: server-config-euw1
+
+  # Lambda artifacts bucket the executor install builds its zips into.
+  lambda_bucket:
+    stack: config0-hub:::aws_storage::aws_s3_bucket
+    labels:
+      - general
+      - infrastructure_ssm
+    arguments:
+      bucket: server-config-euw1-lambda-artifacts-570017720022
+      force_destroy: true
+      cloud_tags_hash:
+        purpose: server-configuration
+        managed_by: config0
+        region: eu-west-1
+    # cloud_tags_hash is a `_hash`-convention arg: it must arrive base64-encoded.
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
+
+  # The EventBridge-v2 SSM executor install. Its record
+  # (resource_type=ssm_ec2_exec_eventbridge_install) promotes
+  # instance_profile_name, managed_tag_key/managed_tag_value, state_machine_arn,
+  # bucket_name, payload_key_layout and kms_key_arn - the single source every
+  # server-configuring stack in this region reads.
+  ssm_install:
+    stack: config0-hub:::aws::ssm_ec2_exec_eventbridge_install
+    labels:
+      - general
+      - infrastructure_ssm
+    dependencies:
+      - lambda_bucket
+    arguments:
+      s3_bucket: selector:::bucket_vars::s3_bucket
+      aws_region: eu-west-1
+      install_name: server-config-euw1
+    selectors:
+      - bucket_vars

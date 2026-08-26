@@ -1,4 +1,4 @@
-# Story 106 - deploy the self-contained env_nosql multistack through the PLATFORM path
+# Story 109 - deploy the self-contained env_nosql multistack through the PLATFORM path
 # (story 09 via platform definition), the NoSQL twin of story 105.
 #
 # The catalogue pre-sets every piece of cross-resource wiring - vpc_id, vpc_name,
@@ -9,9 +9,10 @@
 # cloud_tags_hash. All of those are platform-owned and must not appear here (D5/D8) -
 # including aws_default_region, so this file has no `global:` block.
 #
-# PRECONDITION: server-config must already be installed in the PLATFORM's region
-# (eu-west-1), not ap-northeast-1. The catalogue's keypair_vars / install_vars selectors
-# match `purpose: server-configuration` + `region: eu-west-1`.
+# PRECONDITION: the server-config-euw1 install (server-config-euw1/config0.yaml) must
+# already be installed in the PLATFORM's region (eu-west-1), not the ap-northeast-1
+# server-config install. The catalogue's keypair_vars / install_vars selectors match
+# `purpose: server-configuration` + `region: eu-west-1`.
 #
 # Status: never run.
 
