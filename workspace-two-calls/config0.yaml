@@ -12,6 +12,6 @@ stacks:
     arguments:
       hostname: selector:::host_vars::hostname
       mode: two_calls
-      install_name: server-config
+      install_name: story07
     selectors:
       - host_vars
