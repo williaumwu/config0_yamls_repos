@@ -43,3 +43,4 @@ time without their selectors matching each other's records.
 | `envnosql-track/` | `eval-envnosql` | single run (`env_name: evalnosql`, MongoDB replica + EKS, story 09). Needs `server-config` in the region. |
 | `platform/` | `eval-config0` | one sequential track: `vpc` -> `network-vars-set` -> `nat` -> `rds` -> `eks` |
 | `platform/env-sql/` | `eval-config0` | single run, story 105, passing as of 2026-08-20 |
+| `platform/env-nosql/` | `eval-config0` | single run, story 106 (`env_name: nosql`), never run. Needs `server-config` in the platform's region (eu-west-1). |

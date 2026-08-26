@@ -1,0 +1,34 @@
+# Story 106 - deploy the self-contained env_nosql multistack through the PLATFORM path
+# (story 09 via platform definition), the NoSQL twin of story 105.
+#
+# The catalogue pre-sets every piece of cross-resource wiring - vpc_id, vpc_name,
+# db_sg_id, public/private_subnet_ids, private_route_table_id, eks_cluster_sg_id,
+# eks_node_role_arn, netvars_set_labels_hash, netvars_set_arguments_hash - plus the five
+# server-config values the MongoDB hosts need (ssh_key_name, instance_profile_name,
+# managed_tag_key, managed_tag_value, install_name), on top of aws_default_region and
+# cloud_tags_hash. All of those are platform-owned and must not appear here (D5/D8) -
+# including aws_default_region, so this file has no `global:` block.
+#
+# PRECONDITION: server-config must already be installed in the PLATFORM's region
+# (eu-west-1), not ap-northeast-1. The catalogue's keypair_vars / install_vars selectors
+# match `purpose: server-configuration` + `region: eu-west-1`.
+#
+# Status: never run.
+
+platform: config0-hub:::devops-solutions::platform-eval-config0
+
+stacks:
+  env_3tier_nosql:
+    stack_alias: env_nosql
+    arguments:
+      env_name: nosql
+      mongodb_num_of_replicas: 3
+      mongodb_instance_type: t3.micro
+      mongodb_disksize: 25
+      mongodb_volume_size: 25
+      mongodb_username: admin123
+      mongodb_password: admin123
+      mongodb_ami_filter: ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*
+      mongodb_ami_owner: "099720109477"
+      eks_cluster_version: "1.35"
+      eks_node_ami_type: AL2023_x86_64_STANDARD
