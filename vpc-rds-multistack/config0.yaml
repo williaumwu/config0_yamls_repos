@@ -45,6 +45,11 @@ stacks:
       cloud_tags_hash:
         environment: dev
         purpose: eval-config0
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
   rds:
     stack: config0-hub:::aws_storage::aws_rds
     labels:
@@ -66,5 +71,10 @@ stacks:
     selectors:
       - network_vars
       - sg_vars
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
     connections:
       - reference: dev1
