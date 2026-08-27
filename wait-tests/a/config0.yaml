@@ -1,0 +1,17 @@
+# wait-row scenario (a): see wait-tests/README.md for the pass condition.
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+
+labels:
+  general:
+    environment: dev
+    purpose: wait-tests
+
+stacks:
+  wait:
+    stack: config0-hub:::config0_core::wait_test
+    labels:
+      - general
+    arguments:
+      scenario: a
