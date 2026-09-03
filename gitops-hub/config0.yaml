@@ -1,0 +1,46 @@
+# Story 12 A4 fixture (hub-only variant): two plain-terraform stacks in one project, the second dependent on the first, BOTH in the hub account.
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+
+labels:
+  general:
+    environment: dev
+    purpose: gitops-e2e
+  infrastructure:
+    cloud: aws
+    area: network
+
+stacks:
+  # Stack A: primary (hub) account 570017720022. aws_vpc_simple is two
+  # terraform execgroups (vpc_simple + the sg_3tier substack), both via
+  # tf_executor, so the write-back gets two terraform folders for this stack.
+  vpc:
+    stack: config0-hub:::aws_networking::aws_vpc_simple
+    labels:
+      - general
+      - infrastructure
+    arguments:
+      vpc_name: gitops-hub-vpc
+      cloud_tags_hash:
+        environment: dev
+        purpose: gitops-e2e
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
+
+  # Stack B: one terraform execgroup (aws_storage::buckets). Ordered after
+  # `vpc` by the standard v2 `dependencies:` key (no data flows from the VPC
+  # to a bucket, so this is ordering only). Both stacks run in the hub account (no connections key).
+  bucket:
+    stack: config0-hub:::aws_storage::aws_s3_bucket
+    labels:
+      - general
+      - infrastructure
+    dependencies:
+      - vpc
+    arguments:
+      bucket: gitops-hub-e2e
+      force_destroy: true
