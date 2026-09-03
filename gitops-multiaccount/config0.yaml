@@ -1,0 +1,61 @@
+# Story 12 A4 fixture: two plain-terraform stacks in one project, the second
+# dependent on the first and pinned to the SECOND connected account.
+#
+# Account targeting: a stack's `connections: [{reference: <account_name>}]`
+# names an AWS connection row by its `account_name` (the value given to
+# POST /api/v1/connections). saas-api resolves it in
+# projectlib/gitops.py apply_gitops_order_identities() to the connection's
+# aws_account_id + openci_tf_alias and stamps gitops_account_alias /
+# gitops_account_id onto that stack's schedule row; instruction load carries
+# them into the exec order, and the write-back folder + openci-tf replay
+# use them. A stack without `connections:` uses the hub account frozen at
+# first dispatch. Exactly one reference per stack; the referenced connection
+# must be extended to openci-tf (extend_openci_tf: true) or dispatch fails loud.
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+
+labels:
+  general:
+    environment: dev
+    purpose: gitops-e2e
+  infrastructure:
+    cloud: aws
+    area: network
+
+stacks:
+  # Stack A: primary (hub) account 570017720022. aws_vpc_simple is two
+  # terraform execgroups (vpc_simple + the sg_3tier substack), both via
+  # tf_executor, so the write-back gets two terraform folders for this stack.
+  vpc:
+    stack: config0-hub:::aws_networking::aws_vpc_simple
+    labels:
+      - general
+      - infrastructure
+    arguments:
+      vpc_name: gitops-multiaccount-vpc
+      cloud_tags_hash:
+        environment: dev
+        purpose: gitops-e2e
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
+
+  # Stack B: one terraform execgroup (aws_storage::buckets). Ordered after
+  # `vpc` by the standard v2 `dependencies:` key (no data flows from the VPC
+  # to a bucket, so this is ordering only). `connections` pins the stack to
+  # the second connected account, added as account_name "gitops-second".
+  bucket:
+    stack: config0-hub:::aws_storage::aws_s3_bucket
+    labels:
+      - general
+      - infrastructure
+    dependencies:
+      - vpc
+    arguments:
+      bucket: gitops-multiaccount-second-e2e
+      force_destroy: true
+    connections:
+      - reference: gitops-second
