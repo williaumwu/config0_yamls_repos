@@ -66,3 +66,8 @@ stacks:
       private_route_table_id: selector:::vpc_vars::private_route_table_id
     selectors:
       - vpc_vars
+    connections:
+      - name: gitops-second
+        labels:
+          environment: dev
+          role: cross
