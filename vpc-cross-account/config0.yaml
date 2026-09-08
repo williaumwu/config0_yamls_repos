@@ -5,7 +5,7 @@ global:
 labels:
   general:
     environment: dev
-    purpose: eval-config0
+    purpose: eval-xacct
   infrastructure:
     cloud: aws
     product: vpc
@@ -22,7 +22,7 @@ selectors:
         resource_type: vpc
       labels:
         environment: dev
-        purpose: eval-config0
+        purpose: eval-xacct
         area: network
         cloud: aws
 
@@ -33,11 +33,11 @@ stacks:
       - general
       - infrastructure
     arguments:
-      vpc_name: eval-config0-vpc-simple
-      eks_cluster: eval-config0-eks
+      vpc_name: eval-xacct-vpc-simple
+      eks_cluster: eval-xacct-eks
       cloud_tags_hash:
         environment: dev
-        purpose: eval-config0
+        purpose: eval-xacct
     spec:
       serialization:
         to_base64:
@@ -60,7 +60,7 @@ stacks:
     dependencies:
       - vpc
     arguments:
-      service_name: eval-config0-nat
+      service_name: eval-xacct-nat
       vpc_id: selector:::vpc_vars::vpc_id
       public_subnet_ids: selector:::vpc_vars::public_subnet_ids:csv
       private_route_table_id: selector:::vpc_vars::private_route_table_id
