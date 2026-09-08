@@ -64,4 +64,4 @@ stacks:
       - network_vars
       - sg_vars
     connections:
-      - reference: dev1
+      - name: dev1

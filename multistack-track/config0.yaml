@@ -77,4 +77,4 @@ stacks:
           arguments:
             - cloud_tags_hash
     connections:
-      - reference: dev1
+      - name: dev1
