@@ -1,0 +1,129 @@
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+
+labels:
+  story_14:
+    fixture: story-14-vpc-peering
+    story: "14"
+  vpc_a_record:
+    fixture_role: vpc-a
+    fixture_account_id: "570017720022"
+  peer_request_record:
+    fixture_role: peer-request
+    fixture_account_id: "604227045267"
+  peer_accept_record:
+    fixture_role: peer-accept
+    fixture_account_id: "570017720022"
+  routes_b_record:
+    fixture_role: routes-b
+    fixture_account_id: "604227045267"
+
+selectors:
+  vpc_a_outputs:
+    match:
+      filter:
+        resource_type: vpc
+      labels:
+        fixture: story-14-vpc-peering
+        story: "14"
+        fixture_role: vpc-a
+        fixture_account_id: "570017720022"
+      expect:
+        must_be_one: true
+  peer_request_outputs:
+    match:
+      filter:
+        resource_type: vpc_peering_request
+      labels:
+        fixture: story-14-vpc-peering
+        story: "14"
+        fixture_role: peer-request
+        fixture_account_id: "604227045267"
+      expect:
+        must_be_one: true
+  peer_accept_outputs:
+    match:
+      filter:
+        resource_type: vpc_peering_accept
+      labels:
+        fixture: story-14-vpc-peering
+        story: "14"
+        fixture_role: peer-accept
+        fixture_account_id: "570017720022"
+      expect:
+        must_be_one: true
+
+stacks:
+  vpc_a:
+    stack: config0-hub:::aws_networking::aws_vpc_simple
+    labels:
+      - story_14
+      - vpc_a_record
+    arguments:
+      # aws_vpc_simple uses its 10.11.0.0/16 default; VPC-B is explicitly
+      # placed on the disjoint 10.21.0.0/16 CIDR below.
+      vpc_name: config0-story14-vpc-a-570017720022
+    connections:
+      - name: dev101-test
+
+  peer_request:
+    stack: config0-hub:::aws_networking::aws_vpc_peering_request
+    labels:
+      - story_14
+      - peer_request_record
+    dependencies:
+      - vpc_a
+    arguments:
+      vpc_peering_name: config0-story14-peer-570017720022-604227045267
+      vpc_b_name: config0-story14-vpc-b-604227045267
+      vpc_b_cidr_block: 10.21.0.0/16
+      vpc_a_id: selector:::vpc_a_outputs::vpc_id:str
+      vpc_a_account_id: "570017720022"
+      vpc_a_region: ap-northeast-1
+    selectors:
+      - vpc_a_outputs
+    connections:
+      - name: gitops-second
+      - name: dev101-test
+        env_suffix: _PEER
+
+  peer_accept:
+    stack: config0-hub:::aws_networking::aws_vpc_peering_accept
+    labels:
+      - story_14
+      - peer_accept_record
+    dependencies:
+      - peer_request
+    arguments:
+      vpc_peering_name: selector:::peer_request_outputs::vpc_peering_name:str
+      vpc_peering_connection_id: selector:::peer_request_outputs::vpc_peering_connection_id:str
+      vpc_a_id: selector:::peer_request_outputs::vpc_a_id:str
+      vpc_a_route_table_id: selector:::vpc_a_outputs::public_route_table_id:str
+      vpc_a_cidr_block: selector:::peer_request_outputs::vpc_a_cidr_block:str
+      vpc_b_id: selector:::peer_request_outputs::vpc_b_id:str
+      vpc_b_route_table_id: selector:::peer_request_outputs::vpc_b_route_table_id:str
+      vpc_b_cidr_block: selector:::peer_request_outputs::vpc_b_cidr_block:str
+    selectors:
+      - vpc_a_outputs
+      - peer_request_outputs
+    connections:
+      - name: dev101-test
+
+  routes_b:
+    stack: config0-hub:::aws_networking::aws_vpc_peering_routes
+    labels:
+      - story_14
+      - routes_b_record
+    dependencies:
+      - peer_accept
+    arguments:
+      vpc_peering_name: selector:::peer_accept_outputs::vpc_peering_name:str
+      vpc_peering_connection_id: selector:::peer_accept_outputs::vpc_peering_connection_id:str
+      vpc_b_route_table_id: selector:::peer_request_outputs::vpc_b_route_table_id:str
+      vpc_a_cidr_block: selector:::peer_request_outputs::vpc_a_cidr_block:str
+    selectors:
+      - peer_request_outputs
+      - peer_accept_outputs
+    connections:
+      - name: gitops-second
