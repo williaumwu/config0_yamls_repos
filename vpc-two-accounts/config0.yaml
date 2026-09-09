@@ -1,0 +1,57 @@
+global:
+  arguments:
+    aws_default_region: eu-west-1
+
+labels:
+  general_hub:
+    environment: dev
+    purpose: eval-config0
+  general_second:
+    environment: dev
+    purpose: eval-xacct
+  infrastructure:
+    cloud: aws
+    product: vpc
+    area: network
+
+stacks:
+  vpc_hub:
+    stack: config0-hub:::aws_networking::aws_vpc_simple
+    labels:
+      - general_hub
+      - infrastructure
+    arguments:
+      vpc_name: eval-config0-vpc-simple
+      eks_cluster: eval-config0-eks
+      cloud_tags_hash:
+        environment: dev
+        purpose: eval-config0
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
+    connections:
+      - name: dev101-test
+
+  vpc_second:
+    stack: config0-hub:::aws_networking::aws_vpc_simple
+    labels:
+      - general_second
+      - infrastructure
+    arguments:
+      vpc_name: eval-xacct-vpc-simple
+      eks_cluster: eval-xacct-eks
+      cloud_tags_hash:
+        environment: dev
+        purpose: eval-xacct
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
+    connections:
+      - name: gitops-second
+        labels:
+          environment: dev
+          role: cross
