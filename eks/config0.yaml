@@ -64,4 +64,4 @@ stacks:
       - network_vars
       - sg_vars
     connections:
-      - name: dev1
+      - name: dev101-test
