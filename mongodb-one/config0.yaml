@@ -1,0 +1,113 @@
+# One-server variant of Story 08 (mongodb/config0.yaml): num_of_replicas=1 and a
+# scenario-owned security group. The network (ssm-host-docker VPC) and the
+# region prerequisites (server-config key pair + SSM executor) are reused;
+# only the security group belongs to this scenario, so the project's own
+# execution groups (aws_sg terraform, then the MongoDB host orders) are what
+# Config0 records and exports to the GitOps repository at completion.
+# Story 08's three-server proof in mongodb/ is untouched.
+
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+
+labels:
+  general:
+    environment: dev
+    purpose: eval-mongodb-one
+  infrastructure:
+    cloud: aws
+    product: mongodb
+    area: database
+
+selectors:
+  network_vars:
+    match:
+      filter:
+        resource_type: vpc
+      labels:
+        environment: dev
+        purpose: ssm-host-docker
+        area: network
+        region: ap-northeast-1
+        cloud: aws
+  # The scenario-owned security group (story_sg below), found by this
+  # scenario's own purpose label.
+  sg_vars:
+    match:
+      filter:
+        resource_type: security_group
+      labels:
+        environment: dev
+        purpose: eval-mongodb-one
+        cloud: aws
+      expect:
+        optional: true
+  # Region prerequisites, installed once by server-config/config0.yaml.
+  keypair_vars:
+    match:
+      filter:
+        resource_type: ssh_key_pair
+      labels:
+        purpose: server-configuration
+        region: ap-northeast-1
+  install_vars:
+    match:
+      filter:
+        resource_type: ssm_ec2_exec_eventbridge_install
+      labels:
+        purpose: server-configuration
+        region: ap-northeast-1
+
+stacks:
+  # Order 0: the scenario-owned three-tier security groups inside the reused
+  # ssm-host-docker VPC. Promotes db_sg_id, which the replica stack reads.
+  story_sg:
+    stack: config0-hub:::aws_networking::aws_sg
+    labels:
+      - general
+      - infrastructure
+    arguments:
+      vpc_name: ssm-host-docker-vpc
+      vpc_id: selector:::network_vars::vpc_id
+      tier_level: "3"
+    selectors:
+      - network_vars
+
+  # Order 1: one MongoDB server (num_of_replicas=1), configured over the SSM
+  # executor with the mongodb::ubuntu_vendor_setup and
+  # mongodb::ubuntu_vendor_init_replica execution groups.
+  mongodb_one:
+    stack: config0-hub:::mongodb::mongodb_replica_on_ec2
+    labels:
+      - general
+      - infrastructure
+    dependencies:
+      - story_sg
+    arguments:
+      mongodb_cluster: mongodb-one-dev
+      num_of_replicas: 1
+      vpc_id: selector:::network_vars::vpc_id
+      subnet_ids: selector:::network_vars::private_subnet_ids
+      sg_id: selector:::sg_vars::db_sg_id
+      ssh_key_name: selector:::keypair_vars::key_name
+      instance_profile_name: selector:::install_vars::instance_profile_name
+      managed_tag_key: selector:::install_vars::managed_tag_key
+      managed_tag_value: selector:::install_vars::managed_tag_value
+      instance_type: t3.micro
+      install_name: server-config
+      cloud_tags_hash:
+        environment: dev
+        purpose: eval-mongodb-one
+        database: mongodb
+        product: ec2
+        database_type: nosql
+    selectors:
+      - network_vars
+      - sg_vars
+      - keypair_vars
+      - install_vars
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
