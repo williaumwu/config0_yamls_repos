@@ -60,7 +60,13 @@ selectors:
 
 stacks:
   # Order 0: the scenario-owned three-tier security groups inside the reused
-  # ssm-host-docker VPC. Promotes db_sg_id, which the replica stack reads.
+  # ssm-host-docker VPC. That VPC already carries the VPC stack's own groups
+  # (ssm-host-docker-vpc-security-groups, ssm-host-docker-vpc-bastion|web|api|
+  # database), and AWS security-group names are unique inside a VPC, so
+  # sg_name gives this scenario its own set: the resource
+  # eval-mongodb-one-security-groups and the groups
+  # eval-mongodb-one-bastion|web|api|database. Promotes db_sg_id, which the
+  # replica stack reads.
   story_sg:
     stack: config0-hub:::aws_networking::aws_sg
     labels:
@@ -68,6 +74,7 @@ stacks:
       - infrastructure
     arguments:
       vpc_name: ssm-host-docker-vpc
+      sg_name: eval-mongodb-one
       vpc_id: selector:::network_vars::vpc_id
       tier_level: "3"
     selectors:
