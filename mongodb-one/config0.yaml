@@ -66,7 +66,8 @@ stacks:
   # sg_name gives this scenario its own set: the resource
   # eval-mongodb-one-security-groups and the groups
   # eval-mongodb-one-bastion|web|api|database. Promotes db_sg_id, which the
-  # replica stack reads.
+  # replica stack reads. cloud_tags_hash tags every group with the scenario
+  # purpose, the same AWS tag the instance and volume carry.
   story_sg:
     stack: config0-hub:::aws_networking::aws_sg
     labels:
@@ -77,8 +78,16 @@ stacks:
       sg_name: eval-mongodb-one
       vpc_id: selector:::network_vars::vpc_id
       tier_level: "3"
+      cloud_tags_hash:
+        environment: dev
+        purpose: eval-mongodb-one
     selectors:
       - network_vars
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
 
   # Order 1: one MongoDB server (num_of_replicas=1), configured over the SSM
   # executor with the mongodb::ubuntu_vendor_setup and
