@@ -29,7 +29,7 @@ because discovery raises when two installs exist in one region.
 
 | Install | Folder | Region | Install name | Stories that read it |
 |---|---|---|---|---|
-| region prerequisite (ap-northeast-1) | `server-config/` | `ap-northeast-1` | `server-config` | 07, 08, 09, `ec2-public-ssh/`, `ec2-windows/`, `rds-iam/` |
+| region prerequisite (ap-northeast-1) | `server-config/` | `ap-northeast-1` | `server-config` | 07, 08, 09, `ec2-public-ssh/`, `ec2-windows/`, `rds-iam/`, `elasticache/` |
 | region prerequisite (eu-west-1) | `server-config-euw1/` | `eu-west-1` | `server-euw1` | 109 |
 
 Story 07 is the install test and uses its own `install_name: story07`, not either row above.
@@ -56,6 +56,7 @@ time without their selectors matching each other's records.
 | `ec2-public-ssh/` | `ec2-public-ssh` | single run, CON-11 `ec2` kind `ssh` level target: public Ubuntu host with a scenario `aws_sg` (bastion group, 22 open). Reuses the `ssm-host-docker/` VPC; needs `server-config`. |
 | `ec2-windows/` | `ec2-windows` | single run, CON-11 `ec2_windows` kind target: private Windows Server 2022 host, SSM-managed. Reuses the `ssm-host-docker/` VPC; needs `server-config`. |
 | `rds-iam/` | `rds-iam` | single run, CON-11 `rds` kind target: own VPC -> MySQL RDS with IAM database authentication -> host `rds-iam-host-01` in the same VPC. Needs `server-config` and the `aws_storage` publish that adds `iam_database_authentication_enabled` to `aws_rds`. |
+| `elasticache/` | `elasticache` | single run, CON-11 `elasticache` kind target: own VPC -> Redis OSS ElastiCache replication group `eval-config0-cache` with RBAC user group `eval-config0-cache-users` -> host `elasticache-host-01` in the same VPC. Needs `server-config` and the `aws_storage` publish that adds the `aws_elasticache` stack. |
 | `ecs/` | `ecs` | single run, CON-11 `ecs` kind target: own VPC -> ECS cluster `eval-config0-ecs` with one nginx Fargate service `web`, ECS Exec on, no public IP. Needs the `aws` publish that adds the `aws_ecs_service` stack. |
 
 ## Regions

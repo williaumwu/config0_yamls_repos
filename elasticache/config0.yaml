@@ -1,0 +1,158 @@
+# CON-11 access requests - the target for the `elasticache` kind: an
+# ElastiCache replication group in its own VPC, plus a host in that VPC.
+#
+# Needs the aws_storage publish that adds the aws_elasticache stack and the
+# elasticache execgroup.
+#
+# One self-contained run in ap-northeast-1, rds-iam/ shape: its own VPC,
+# config0-hub:::aws_storage::aws_elasticache, and a host.
+#
+# A grant on this cache passes cache_name: eval-config0-cache,
+# cache_type: replication_group and user_group_id: eval-config0-cache-users
+# (the resource row carries all three under those names), and engine: redis
+# (the row's engine; the grant takes it as an argument, not a target field).
+# elasticache-host-01 needs the region prerequisites from server-config/.
+
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+
+labels:
+  general:
+    environment: dev
+    purpose: elasticache
+  infrastructure_network:
+    cloud: aws
+    product: vpc
+    area: network
+  infrastructure_database:
+    cloud: aws
+    product: elasticache
+    area: database
+  infrastructure_compute:
+    cloud: aws
+    product: ec2
+    area: compute
+
+selectors:
+  # network_vars matches the VPC resource record (it alone carries the region
+  # label); vpc_name, vpc_id and the subnet ids are outputs promoted onto it.
+  network_vars:
+    match:
+      filter:
+        resource_type: vpc
+      labels:
+        environment: dev
+        purpose: elasticache
+        area: network
+        region: ap-northeast-1
+        cloud: aws
+
+  # sg_vars matches the security_group record the VPC stack's aws_sg substack
+  # writes - a SEPARATE record from the VPC; db_sg_id and api_sg_id are on it.
+  sg_vars:
+    match:
+      filter:
+        resource_type: security_group
+      labels:
+        environment: dev
+        purpose: elasticache
+        area: network
+        cloud: aws
+
+  # Region prerequisites, installed once by server-config/config0.yaml.
+  keypair_vars:
+    match:
+      filter:
+        resource_type: ssh_key_pair
+      labels:
+        purpose: server-configuration
+        region: ap-northeast-1
+  install_vars:
+    match:
+      filter:
+        resource_type: ssm_ec2_exec_eventbridge_install
+      labels:
+        purpose: server-configuration
+        region: ap-northeast-1
+
+stacks:
+  # Order 0: the scenario VPC, rds-iam shape: SSM interface endpoints for the
+  # no-public-IP host, and a NAT gateway so the host can reach public package
+  # repositories.
+  vpc:
+    stack: config0-hub:::aws_networking::aws_vpc_simple
+    labels:
+      - general
+      - infrastructure_network
+    arguments:
+      vpc_name: elasticache-vpc
+      enable_ssm_endpoints: true
+      enable_nat_gateway: true
+      cloud_tags_hash:
+        environment: dev
+        purpose: elasticache
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
+
+  # Order 1: the cache, one cache.t4g.micro Redis OSS node (the stack
+  # defaults), in the database security group.
+  elasticache:
+    stack: config0-hub:::aws_storage::aws_elasticache
+    labels:
+      - general
+      - infrastructure_database
+    dependencies:
+      - vpc
+    arguments:
+      sg_id: selector:::sg_vars::db_sg_id
+      subnet_ids: selector:::network_vars::private_subnet_ids
+      cache_name: eval-config0-cache
+      cloud_tags_hash:
+        environment: dev
+        purpose: elasticache
+    selectors:
+      - network_vars
+      - sg_vars
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
+
+  # Order 2: the PRIVATE host in the cache's VPC, rds-iam host shape. It
+  # sits in the api security group, which the database group admits on every
+  # port, so the host reaches 6379.
+  elasticache_host:
+    stack: config0-hub:::aws::aws_ec2_server
+    labels:
+      - general
+      - infrastructure_compute
+    dependencies:
+      - vpc
+    arguments:
+      hostname: elasticache-host-01
+      ssh_key_name: selector:::keypair_vars::key_name
+      subnet_ids: selector:::network_vars::private_subnet_ids:csv
+      associate_public_ip_address: "false"
+      sg_id: selector:::sg_vars::api_sg_id
+      instance_type: t3.small
+      instance_profile_name: selector:::install_vars::instance_profile_name
+      managed_tag_key: selector:::install_vars::managed_tag_key
+      managed_tag_value: selector:::install_vars::managed_tag_value
+      cloud_tags_hash:
+        environment: dev
+        purpose: elasticache
+    selectors:
+      - network_vars
+      - sg_vars
+      - keypair_vars
+      - install_vars
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
