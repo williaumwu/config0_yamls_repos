@@ -1,0 +1,102 @@
+# CON-11 access requests - the target for the `ecs` kind: an ECS Fargate
+# service with ECS Exec on, in its own VPC.
+#
+# Needs the aws publish that adds the aws_ecs_service stack and the
+# ecs_service execgroup.
+#
+# One self-contained run in ap-northeast-1, rds-iam/ shape without the host:
+# ECS is not a database kind, so the grant runs no user script on a host.
+#
+# A grant on this service passes ecs_cluster: eval-config0-ecs and
+# ecs_service: web (the resource row carries both under those names).
+
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+
+labels:
+  general:
+    environment: dev
+    purpose: ecs
+  infrastructure_network:
+    cloud: aws
+    product: vpc
+    area: network
+  infrastructure_compute:
+    cloud: aws
+    product: ecs
+    area: compute
+
+selectors:
+  # network_vars matches the VPC resource record (it alone carries the region
+  # label); vpc_name, vpc_id and the subnet ids are outputs promoted onto it.
+  network_vars:
+    match:
+      filter:
+        resource_type: vpc
+      labels:
+        environment: dev
+        purpose: ecs
+        area: network
+        region: ap-northeast-1
+        cloud: aws
+
+  # sg_vars matches the security_group record the VPC stack's aws_sg substack
+  # writes - a SEPARATE record from the VPC; api_sg_id is on it.
+  sg_vars:
+    match:
+      filter:
+        resource_type: security_group
+      labels:
+        environment: dev
+        purpose: ecs
+        area: network
+        cloud: aws
+
+stacks:
+  # Order 0: the scenario VPC, rds-iam shape. The NAT gateway lets the
+  # no-public-IP task pull nginx from public.ecr.aws and reach ssmmessages
+  # for ECS Exec.
+  vpc:
+    stack: config0-hub:::aws_networking::aws_vpc_simple
+    labels:
+      - general
+      - infrastructure_network
+    arguments:
+      vpc_name: ecs-vpc
+      enable_ssm_endpoints: true
+      enable_nat_gateway: true
+      cloud_tags_hash:
+        environment: dev
+        purpose: ecs
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
+
+  # Order 1: the cluster and one nginx Fargate task (the stack defaults),
+  # in the private subnets and the api security group.
+  ecs:
+    stack: config0-hub:::aws::aws_ecs_service
+    labels:
+      - general
+      - infrastructure_compute
+    dependencies:
+      - vpc
+    arguments:
+      sg_id: selector:::sg_vars::api_sg_id
+      subnet_ids: selector:::network_vars::private_subnet_ids
+      ecs_cluster: eval-config0-ecs
+      ecs_service: web
+      cloud_tags_hash:
+        environment: dev
+        purpose: ecs
+    selectors:
+      - network_vars
+      - sg_vars
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
