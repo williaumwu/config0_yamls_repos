@@ -67,7 +67,7 @@ regions rather than piled into one. Each region below stays at 3 VPCs or fewer.
 
 | Region | Tracks | VPCs created |
 |---|---|---|
-| `ap-northeast-1` | `server-config/` (0), `ssm-host-docker/` (1), `mongodb/` (0), `workspace-isolation/` + `workspace-two-calls/` (0), `envnosql-track/` (1, via env_nosql's network substack), `ec2-public-ssh/` (0), `ec2-windows/` (0), `rds-iam/` (1), `ecs/` (1), `docdb/` (1) | 5 |
+| `ap-northeast-1` | `server-config/` (0), `ssm-host-docker/` (1), `mongodb/` (0), `workspace-isolation/` + `workspace-two-calls/` (0), `envnosql-track/` (1, via env_nosql's network substack), `ec2-public-ssh/` (0), `ec2-windows/` (0), `rds-iam/` (1), `ecs/` (1), `docdb/` (1), `elasticache/` (1) | 6 |
 | `ap-southeast-1` | `vpc-track/` (1), `rds-track/` (1), `eks-track/` (1) | 3 |
 | `eu-west-1` | `server-config-euw1/` (0), `platform/` (1), `platform/env-sql/` (1), `platform/env-nosql/` (1) | 3 |
 | `us-west-2` | `multistack-track/` (1), `envsql-track/` (1), `ssm-ec2-exec-eventbridge-longbuild/` (1) | 3 |
