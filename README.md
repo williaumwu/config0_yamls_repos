@@ -56,6 +56,7 @@ time without their selectors matching each other's records.
 | `ec2-public-ssh/` | `ec2-public-ssh` | single run, CON-11 `ec2` kind `ssh` level target: public Ubuntu host with a scenario `aws_sg` (bastion group, 22 open). Reuses the `ssm-host-docker/` VPC; needs `server-config`. |
 | `ec2-windows/` | `ec2-windows` | single run, CON-11 `ec2_windows` kind target: private Windows Server 2022 host, SSM-managed. Reuses the `ssm-host-docker/` VPC; needs `server-config`. |
 | `rds-iam/` | `rds-iam` | single run, CON-11 `rds` kind target: own VPC -> MySQL RDS with IAM database authentication -> host `rds-iam-host-01` in the same VPC. Needs `server-config` and the `aws_storage` publish that adds `iam_database_authentication_enabled` to `aws_rds`. |
+| `docdb/` | `docdb` | single run, CON-11 `docdb` kind target: own VPC -> DocumentDB 5.0 cluster (one `db.t3.medium` instance) -> host `docdb-host-01` in the same VPC. Needs `server-config` and the `aws_storage` publish that adds the `aws_docdb` stack. |
 | `elasticache/` | `elasticache` | single run, CON-11 `elasticache` kind target: own VPC -> Redis OSS ElastiCache replication group `eval-config0-cache` with RBAC user group `eval-config0-cache-users` -> host `elasticache-host-01` in the same VPC. Needs `server-config` and the `aws_storage` publish that adds the `aws_elasticache` stack. |
 | `ecs/` | `ecs` | single run, CON-11 `ecs` kind target: own VPC -> ECS cluster `eval-config0-ecs` with one nginx Fargate service `web`, ECS Exec on, no public IP. Needs the `aws` publish that adds the `aws_ecs_service` stack. |
 
@@ -66,7 +67,7 @@ regions rather than piled into one. Each region below stays at 3 VPCs or fewer.
 
 | Region | Tracks | VPCs created |
 |---|---|---|
-| `ap-northeast-1` | `server-config/` (0), `ssm-host-docker/` (1), `mongodb/` (0), `workspace-isolation/` + `workspace-two-calls/` (0), `envnosql-track/` (1, via env_nosql's network substack), `ec2-public-ssh/` (0), `ec2-windows/` (0), `rds-iam/` (1), `ecs/` (1) | 4 |
+| `ap-northeast-1` | `server-config/` (0), `ssm-host-docker/` (1), `mongodb/` (0), `workspace-isolation/` + `workspace-two-calls/` (0), `envnosql-track/` (1, via env_nosql's network substack), `ec2-public-ssh/` (0), `ec2-windows/` (0), `rds-iam/` (1), `ecs/` (1), `docdb/` (1) | 5 |
 | `ap-southeast-1` | `vpc-track/` (1), `rds-track/` (1), `eks-track/` (1) | 3 |
 | `eu-west-1` | `server-config-euw1/` (0), `platform/` (1), `platform/env-sql/` (1), `platform/env-nosql/` (1) | 3 |
 | `us-west-2` | `multistack-track/` (1), `envsql-track/` (1), `ssm-ec2-exec-eventbridge-longbuild/` (1) | 3 |
