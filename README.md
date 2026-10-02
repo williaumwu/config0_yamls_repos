@@ -29,7 +29,7 @@ because discovery raises when two installs exist in one region.
 
 | Install | Folder | Region | Install name | Stories that read it |
 |---|---|---|---|---|
-| region prerequisite (ap-northeast-1) | `server-config/` | `ap-northeast-1` | `server-config` | 07, 08, 09, `ec2-public-ssh/`, `ec2-windows/`, `rds-iam/`, `elasticache/` |
+| region prerequisite (ap-northeast-1) | `server-config/` | `ap-northeast-1` | `server-config` | 07, 08, 09, `ec2-public-ssh/`, `ec2-windows/`, `rds-iam/`, `elasticache/`, `docdb/` |
 | region prerequisite (eu-west-1) | `server-config-euw1/` | `eu-west-1` | `server-euw1` | 109 |
 
 Story 07 is the install test and uses its own `install_name: story07`, not either row above.
