@@ -49,7 +49,7 @@ stacks:
       vpc_name: selector:::network_vars::vpc_name
       vpc_id: selector:::network_vars::vpc_id
       eks_cluster: eval-eks-eks
-      eks_cluster_version: "1.35"
+      eks_cluster_version: "1.37"
       eks_cluster_subnet_ids: selector:::network_vars::public_subnet_ids:csv
       eks_cluster_sg_id: selector:::sg_vars::bastion_sg_id
       eks_node_group_subnet_ids: selector:::network_vars::private_subnet_ids:csv

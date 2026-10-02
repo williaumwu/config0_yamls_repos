@@ -22,7 +22,7 @@ stacks:
     stack_alias: aws_eks
     arguments:
       eks_cluster: eval-config0-platform-eks
-      eks_cluster_version: "1.35"
+      eks_cluster_version: "1.37"
       vpc_id: selector:::network_vars::vpc_id
       eks_cluster_sg_id: selector:::network_vars::bastion_sg_id
       eks_cluster_subnet_ids: selector:::network_vars::public_subnet_ids:csv
