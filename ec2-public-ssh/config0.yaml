@@ -1,0 +1,126 @@
+# CON-11 access requests - the target for the `ec2` kind's `ssh` level
+# (EC2 Instance Connect: ec2-instance-connect:SendSSHPublicKey, then ssh over
+# the host's public IP).
+#
+# Host shape is ssm-host-docker/'s server (Ubuntu 24.04, SSM executor
+# instance profile + managed tag, so the host also serves session grants),
+# but in a PUBLIC subnet with a public IP and a security group open on 22.
+#
+# Reuses, like mongodb-one/: the ssm-host-docker VPC (run ssm-host-docker/
+# first) and the region prerequisites from server-config/ (key pair + SSM
+# executor install, install_name server-config). Only the security group and
+# the host belong to this scenario.
+
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+
+labels:
+  general:
+    environment: dev
+    purpose: ec2-public-ssh
+  infrastructure:
+    cloud: aws
+    product: ec2
+    area: compute
+
+selectors:
+  network_vars:
+    match:
+      filter:
+        resource_type: vpc
+      labels:
+        environment: dev
+        purpose: ssm-host-docker
+        area: network
+        region: ap-northeast-1
+        cloud: aws
+  # The scenario-owned security group (story_sg below), found by this
+  # scenario's own purpose label.
+  sg_vars:
+    match:
+      filter:
+        resource_type: security_group
+      labels:
+        environment: dev
+        purpose: ec2-public-ssh
+        cloud: aws
+      expect:
+        optional: true
+  # Region prerequisites, installed once by server-config/config0.yaml.
+  keypair_vars:
+    match:
+      filter:
+        resource_type: ssh_key_pair
+      labels:
+        purpose: server-configuration
+        region: ap-northeast-1
+  install_vars:
+    match:
+      filter:
+        resource_type: ssm_ec2_exec_eventbridge_install
+      labels:
+        purpose: server-configuration
+        region: ap-northeast-1
+
+stacks:
+  # Order 0: the scenario-owned three-tier security groups inside the reused
+  # ssm-host-docker VPC; sg_name keeps the group names apart from the VPC's
+  # own groups (names are unique per VPC). aws_sg takes no custom rules: the
+  # host uses its bastion group, which opens TCP 22 (and 443) from 0.0.0.0/0.
+  # That is acceptable only because this is a disposable test host.
+  story_sg:
+    stack: config0-hub:::aws_networking::aws_sg
+    labels:
+      - general
+      - infrastructure
+    arguments:
+      vpc_name: ssm-host-docker-vpc
+      sg_name: ec2-public-ssh
+      vpc_id: selector:::network_vars::vpc_id
+      tier_level: "3"
+      cloud_tags_hash:
+        environment: dev
+        purpose: ec2-public-ssh
+    selectors:
+      - network_vars
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
+
+  # Order 1: the PUBLIC server - public subnet, public IP, bastion SG (22 in).
+  # Ubuntu 24.04 (the aws_ec2_server default AMI) ships the SSM agent and EC2
+  # Instance Connect. The executor's instance profile and managed tag keep it
+  # SSM-managed for session/port_forward grants as well.
+  ec2_public_ssh_host:
+    stack: config0-hub:::aws::aws_ec2_server
+    labels:
+      - general
+      - infrastructure
+    dependencies:
+      - story_sg
+    arguments:
+      hostname: ec2-public-ssh-01
+      ssh_key_name: selector:::keypair_vars::key_name
+      subnet_ids: selector:::network_vars::public_subnet_ids:csv
+      associate_public_ip_address: "true"
+      sg_id: selector:::sg_vars::bastion_sg_id
+      instance_type: t3.small
+      instance_profile_name: selector:::install_vars::instance_profile_name
+      managed_tag_key: selector:::install_vars::managed_tag_key
+      managed_tag_value: selector:::install_vars::managed_tag_value
+      cloud_tags_hash:
+        environment: dev
+        purpose: ec2-public-ssh
+    selectors:
+      - network_vars
+      - sg_vars
+      - keypair_vars
+      - install_vars
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash

@@ -1,0 +1,163 @@
+# CON-11 access requests - the target for the `rds` kind: the rds/ scenario
+# with IAM database authentication ON, plus a host in the database's VPC.
+#
+# iam_database_authentication_enabled needs the aws_storage publish that adds
+# that input to the aws_rds stack; before that publish the stack does not
+# parse it.
+#
+# Differences from rds/: one self-contained run in ap-northeast-1 (its own
+# VPC, not a separate vpc/ run), and config0-hub:::aws_storage::aws_rds
+# (the hub stack vpc-rds-multistack/ uses).
+#
+# rds_access runs its user script on a `server` row in the database's VPC.
+# A grant on this database passes host: rds-iam-host-01 and
+# install_name: server-config (the region prerequisites from server-config/).
+
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+
+labels:
+  general:
+    environment: dev
+    purpose: rds-iam
+  infrastructure_network:
+    cloud: aws
+    product: vpc
+    area: network
+  infrastructure_database:
+    cloud: aws
+    product: rds
+    area: database
+  infrastructure_compute:
+    cloud: aws
+    product: ec2
+    area: compute
+
+selectors:
+  # network_vars matches the VPC resource record (it alone carries the region
+  # label); vpc_name, vpc_id and the subnet ids are outputs promoted onto it.
+  network_vars:
+    match:
+      filter:
+        resource_type: vpc
+      labels:
+        environment: dev
+        purpose: rds-iam
+        area: network
+        region: ap-northeast-1
+        cloud: aws
+
+  # sg_vars matches the security_group record the VPC stack's aws_sg substack
+  # writes - a SEPARATE record from the VPC; db_sg_id and api_sg_id are on it.
+  sg_vars:
+    match:
+      filter:
+        resource_type: security_group
+      labels:
+        environment: dev
+        purpose: rds-iam
+        area: network
+        cloud: aws
+
+  # Region prerequisites, installed once by server-config/config0.yaml.
+  keypair_vars:
+    match:
+      filter:
+        resource_type: ssh_key_pair
+      labels:
+        purpose: server-configuration
+        region: ap-northeast-1
+  install_vars:
+    match:
+      filter:
+        resource_type: ssm_ec2_exec_eventbridge_install
+      labels:
+        purpose: server-configuration
+        region: ap-northeast-1
+
+stacks:
+  # Order 0: the scenario VPC, ssm-host-docker shape: SSM interface endpoints
+  # for the no-public-IP host, and a NAT gateway so the rds-access-user
+  # script can reach public package repositories.
+  vpc:
+    stack: config0-hub:::aws_networking::aws_vpc_simple
+    labels:
+      - general
+      - infrastructure_network
+    arguments:
+      vpc_name: rds-iam-vpc
+      enable_ssm_endpoints: true
+      enable_nat_gateway: true
+      cloud_tags_hash:
+        environment: dev
+        purpose: rds-iam
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
+
+  # Order 1: the database, as in rds/, with IAM database authentication on.
+  rds:
+    stack: config0-hub:::aws_storage::aws_rds
+    labels:
+      - general
+      - infrastructure_database
+    dependencies:
+      - vpc
+    arguments:
+      sg_id: selector:::sg_vars::db_sg_id
+      subnet_ids: selector:::network_vars::private_subnet_ids
+      rds_name: eval-config0-rds-iam
+      allocated_storage: 14
+      db_name: app
+      engine_version: "8.0.46"
+      publish_creds: true
+      # needs the aws_storage publish that adds this input to aws_rds
+      iam_database_authentication_enabled: "true"
+      cloud_tags_hash:
+        environment: dev
+        purpose: rds-iam
+    selectors:
+      - network_vars
+      - sg_vars
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
+
+  # Order 2: the PRIVATE host in the database's VPC, ssm-host-docker host
+  # shape. It sits in the api security group, which the database group admits
+  # on every port, so the rds-access-user script reaches 3306.
+  rds_iam_host:
+    stack: config0-hub:::aws::aws_ec2_server
+    labels:
+      - general
+      - infrastructure_compute
+    dependencies:
+      - vpc
+    arguments:
+      hostname: rds-iam-host-01
+      ssh_key_name: selector:::keypair_vars::key_name
+      subnet_ids: selector:::network_vars::private_subnet_ids:csv
+      associate_public_ip_address: "false"
+      sg_id: selector:::sg_vars::api_sg_id
+      instance_type: t3.small
+      instance_profile_name: selector:::install_vars::instance_profile_name
+      managed_tag_key: selector:::install_vars::managed_tag_key
+      managed_tag_value: selector:::install_vars::managed_tag_value
+      cloud_tags_hash:
+        environment: dev
+        purpose: rds-iam
+    selectors:
+      - network_vars
+      - sg_vars
+      - keypair_vars
+      - install_vars
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash

@@ -29,7 +29,7 @@ because discovery raises when two installs exist in one region.
 
 | Install | Folder | Region | Install name | Stories that read it |
 |---|---|---|---|---|
-| region prerequisite (ap-northeast-1) | `server-config/` | `ap-northeast-1` | `server-config` | 07, 08, 09 |
+| region prerequisite (ap-northeast-1) | `server-config/` | `ap-northeast-1` | `server-config` | 07, 08, 09, `ec2-public-ssh/`, `ec2-windows/`, `rds-iam/` |
 | region prerequisite (eu-west-1) | `server-config-euw1/` | `eu-west-1` | `server-euw1` | 109 |
 
 Story 07 is the install test and uses its own `install_name: story07`, not either row above.
@@ -53,6 +53,9 @@ time without their selectors matching each other's records.
 | `platform/` | `eval-config0` | one sequential track: `vpc` -> `network-vars-set` -> `nat` -> `rds` -> `eks` |
 | `platform/env-sql/` | `eval-config0-env` | single run, story 105, passing as of 2026-08-20. Self-contained: brings its own network substack, depends on none of 102-104. |
 | `platform/env-nosql/` | `eval-config0-nosql` | single run, story 109 (`env_name: nosql`), never run. Self-contained the same way in its own purpose namespace, so a live 105 never satisfies its checks; depends on none of 102-105. Needs the `server-euw1` install (`server-config-euw1/`) in the platform's region (eu-west-1). |
+| `ec2-public-ssh/` | `ec2-public-ssh` | single run, CON-11 `ec2` kind `ssh` level target: public Ubuntu host with a scenario `aws_sg` (bastion group, 22 open). Reuses the `ssm-host-docker/` VPC; needs `server-config`. |
+| `ec2-windows/` | `ec2-windows` | single run, CON-11 `ec2_windows` kind target: private Windows Server 2022 host, SSM-managed. Reuses the `ssm-host-docker/` VPC; needs `server-config`. |
+| `rds-iam/` | `rds-iam` | single run, CON-11 `rds` kind target: own VPC -> MySQL RDS with IAM database authentication -> host `rds-iam-host-01` in the same VPC. Needs `server-config` and the `aws_storage` publish that adds `iam_database_authentication_enabled` to `aws_rds`. |
 
 ## Regions
 
@@ -61,7 +64,7 @@ regions rather than piled into one. Each region below stays at 3 VPCs or fewer.
 
 | Region | Tracks | VPCs created |
 |---|---|---|
-| `ap-northeast-1` | `server-config/` (0), `ssm-host-docker/` (1), `mongodb/` (0), `workspace-isolation/` + `workspace-two-calls/` (0), `envnosql-track/` (1, via env_nosql's network substack) | 2 |
+| `ap-northeast-1` | `server-config/` (0), `ssm-host-docker/` (1), `mongodb/` (0), `workspace-isolation/` + `workspace-two-calls/` (0), `envnosql-track/` (1, via env_nosql's network substack), `ec2-public-ssh/` (0), `ec2-windows/` (0), `rds-iam/` (1) | 3 |
 | `ap-southeast-1` | `vpc-track/` (1), `rds-track/` (1), `eks-track/` (1) | 3 |
 | `eu-west-1` | `server-config-euw1/` (0), `platform/` (1), `platform/env-sql/` (1), `platform/env-nosql/` (1) | 3 |
 | `us-west-2` | `multistack-track/` (1), `envsql-track/` (1), `ssm-ec2-exec-eventbridge-longbuild/` (1) | 3 |
