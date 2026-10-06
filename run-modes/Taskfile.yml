@@ -1,0 +1,29 @@
+version: '3'
+
+tasks:
+  check:
+    desc: Parse the four v2 fixtures and capture the Class Helper through the code checkout, without live calls.
+    requires:
+      vars: [CODE_ROOT]
+    cmds:
+      - CODE_ROOT='{{.CODE_ROOT}}' python3 -B -m unittest test_fixtures.py
+      - ruff check --config '{{.CODE_ROOT}}/ruff.toml' --config 'builtins = ["newSchedStack"]' ../stacks/_config0_configs/run_modes_test/_files/run.py test_fixtures.py
+
+  request:
+    desc: Retain one authenticated SaaS or QHost API response for the later live campaign. No retries or hidden mutations.
+    requires:
+      vars: [URL, TOKEN_FILE, RECORD]
+    vars:
+      METHOD: '{{default "GET" .METHOD}}'
+      BODY: '{{default "" .BODY}}'
+    cmds:
+      - |
+        set -euo pipefail
+        test -s '{{.TOKEN_FILE}}'
+        mkdir -p "$(dirname '{{.RECORD}}')"
+        args=(--fail-with-body --silent --show-error --request '{{.METHOD}}'
+          --header "Authorization: Bearer $(tr -d '\r\n' < '{{.TOKEN_FILE}}')")
+        if [ -n '{{.BODY}}' ]; then
+          args+=(--header 'Content-Type: application/json' --data-binary '@{{.BODY}}')
+        fi
+        curl "${args[@]}" '{{.URL}}' | tee '{{.RECORD}}'

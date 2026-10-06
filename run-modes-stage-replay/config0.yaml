@@ -1,0 +1,9 @@
+# Complete once, then replay from consume. Its producer_run_id must stay unchanged.
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+stacks:
+  staged:
+    stack: williaumwu:::config0_yamls_repos::run_modes_test
+    arguments:
+      output_name: con50-stage-replay

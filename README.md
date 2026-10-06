@@ -1,4 +1,15 @@
 # config0_yamls_repos
+
+## Supported run-mode fixtures
+
+`run-modes-on-failure/`, `run-modes-stage-replay/`, `run-modes-stack-replay/`
+and `run-modes-schedule-chain/` exercise the existing job and schedule machinery
+with shell orders and QHost rows, without creating AWS resources. Their shared
+Class Helper lives under `stacks/_config0_configs/run_modes_test/`. Scan this
+repo before submitting those configs. See [the prepared campaign](run-modes/JOURNEY.md)
+for local checks, exact live commands and acceptance evidence. The campaign has
+not been run.
+
 ## Region prerequisites
 
 Run `server-config/config0.yaml` ONCE per region, right after onboarding, before any track
