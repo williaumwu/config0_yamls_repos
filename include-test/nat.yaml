@@ -1,0 +1,19 @@
+# NAT stack lives ONLY in this included file (CON-24 proof).
+stacks:
+  nat:
+    stack: config0-hub:::aws_networking::aws_nat_inst_vpc
+    labels:
+      - general
+      - infrastructure
+    # explicit stack-level dependency (config0.yaml `dependencies:` key) — the
+    # nat stack's selectors read the vpc resource record, so it must run after
+    # the vpc stack writes back in this same run.
+    dependencies:
+      - vpc
+    arguments:
+      service_name: eval-config0-nat
+      vpc_id: selector:::vpc_vars::vpc_id
+      public_subnet_ids: selector:::vpc_vars::public_subnet_ids:csv
+      private_route_table_id: selector:::vpc_vars::private_route_table_id
+    selectors:
+      - vpc_vars

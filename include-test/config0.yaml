@@ -1,0 +1,48 @@
+include:
+  - nat.yaml
+
+global:
+  arguments:
+    aws_default_region: eu-west-1
+
+labels:
+  general:
+    environment: dev
+    purpose: eval-config0
+  infrastructure:
+    cloud: aws
+    product: vpc
+    area: network
+
+# Explicit selectors section — vpc_vars matches the vpc resource record written
+# by the `vpc` stack below; the nat stack reads vpc_id/public_subnet_ids/
+# private_route_table_id off it. filter.resource_type narrows away the separate
+# security_group record that carries the same labels.
+selectors:
+  vpc_vars:
+    match:
+      filter:
+        resource_type: vpc
+      labels:
+        environment: dev
+        purpose: eval-config0
+        area: network
+        cloud: aws
+
+stacks:
+  vpc:
+    stack: config0-hub:::aws_networking::aws_vpc_simple
+    labels:
+      - general
+      - infrastructure
+    arguments:
+      vpc_name: eval-config0-vpc-simple
+      eks_cluster: eval-config0-eks
+      cloud_tags_hash:
+        environment: dev
+        purpose: eval-config0
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
