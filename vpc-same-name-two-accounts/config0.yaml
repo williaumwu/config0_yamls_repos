@@ -1,0 +1,52 @@
+# CON-20 proof: the SAME VPC name in two AWS accounts of one user.
+# vpc_hub runs in the tenant (hub) account; vpc_second runs in the connected
+# account gitops-second. Both use vpc_name eval-samename-vpc, same region.
+global:
+  arguments:
+    aws_default_region: eu-west-1
+
+labels:
+  general:
+    environment: dev
+    purpose: eval-samename
+  infrastructure:
+    cloud: aws
+    product: vpc
+    area: network
+
+stacks:
+  vpc_hub:
+    stack: config0-hub:::aws_networking::aws_vpc_simple
+    labels:
+      - general
+      - infrastructure
+    arguments:
+      vpc_name: eval-samename-vpc
+      eks_cluster: eval-samename-eks
+      cloud_tags_hash:
+        environment: dev
+        purpose: eval-samename
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
+
+  vpc_second:
+    stack: config0-hub:::aws_networking::aws_vpc_simple
+    labels:
+      - general
+      - infrastructure
+    arguments:
+      vpc_name: eval-samename-vpc
+      eks_cluster: eval-samename-eks
+      cloud_tags_hash:
+        environment: dev
+        purpose: eval-samename
+    spec:
+      serialization:
+        to_base64:
+          arguments:
+            - cloud_tags_hash
+    connections:
+      - name: gitops-second
