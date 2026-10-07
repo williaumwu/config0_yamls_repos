@@ -161,6 +161,7 @@ Second must not start before first completes. Second's recorded
 ## Explicit cleanup
 
 Remove these four projects through the existing project removal UI. Wait for
-removal to complete. Require the four Convex entries and their QHost schedules,
-runs and vars_set/run_output rows to be absent. No offboard or AWS cleanup is
+removal to complete. Require the four Convex entries and their QHost schedules
+and vars_set/run_output rows to be absent. Run rows stay: they are history
+and have no delete route (run lifecycle contract). No offboard or AWS cleanup is
 needed for these fixture stacks themselves, because they create no AWS resources.
