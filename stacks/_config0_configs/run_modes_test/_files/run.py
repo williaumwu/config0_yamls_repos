@@ -49,7 +49,6 @@ class Main(newSchedStack):
         stack.add_external_cmd(cmd="echo failure-handled", role="external/cli/execute")
 
     def run(self) -> Any:
-        self.stack.unset_parallel(sched_init=True)
         self.add_job("produce")
         self.add_job("consume")
         self.add_job("handle_failure")
