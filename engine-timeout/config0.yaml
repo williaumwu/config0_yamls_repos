@@ -1,0 +1,12 @@
+# CON-66 proof: one engine-delegated order whose 400 s apply outlives T=120 on
+# the engine's Lambda target. Expected end state: order timed_out at T, engine
+# marker "execution timed out at 120 seconds", no AWS resource created.
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+stacks:
+  sleep:
+    stack: williaumwu:::config0_yamls_repos::engine_timeout
+    arguments:
+      sleep_name: engine-timeout-sleep
+      timeout: 120

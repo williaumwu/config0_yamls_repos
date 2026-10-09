@@ -10,6 +10,13 @@ repo before submitting those configs. See [the prepared campaign](run-modes/JOUR
 for local checks, exact live commands and acceptance evidence. The campaign has
 not been run.
 
+## Engine timeout proof
+
+`engine-timeout/` (CON-66) runs one `williaumwu:::config0_yamls_repos::engine_timeout`
+stack: a `tf_executor` order whose execgroup applies a 400 s `time_sleep` with the
+order `timeout` set to 120. It creates no AWS resource. Scan this repo first so the
+`engine_timeout` execgroup and stack are published.
+
 ## Region prerequisites
 
 Run `server-config/config0.yaml` ONCE per region, right after onboarding, before any track
