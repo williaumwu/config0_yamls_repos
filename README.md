@@ -17,6 +17,17 @@ stack: a `tf_executor` order whose execgroup applies a 400 s `time_sleep` with t
 order `timeout` set to 120. It creates no AWS resource. Scan this repo first so the
 `engine_timeout` execgroup and stack are published.
 
+## CodeBuild fail-fast integration test
+
+`codebuild-failfast/` runs one `williaumwu:::config0_yamls_repos::codebuild_failfast`
+stack with `timeout: 900`, so the publisher routes its `tf_executor` order to the
+engine's CodeBuild target. Its terraform plan fails at once on a precondition that is
+always false. It proves that a CodeBuild build dying in its first seconds fails the
+order within about a minute (not at T), that each retry is a real build, and that the
+dependent canary stack never runs. It creates no AWS resource. Scan this repo first.
+Checkpoints: the "Fail-fast case" table in the monorepo's
+`user-stories/06-long-running-build/JOURNEY.md`.
+
 ## Region prerequisites
 
 Run `server-config/config0.yaml` ONCE per region, right after onboarding, before any track

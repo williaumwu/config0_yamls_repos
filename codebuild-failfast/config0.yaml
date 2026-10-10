@@ -1,0 +1,22 @@
+# CodeBuild fail-fast integration test: one engine-delegated order routed to
+# the CodeBuild target (timeout 900 > 800) whose terraform plan fails at once
+# on a precondition. Expected end state: the build order failed after its retry
+# budget (one real CodeBuild build per attempt, each FAILED in its first
+# seconds), the run closed failed within minutes of the fire, the canary stack
+# never dispatched, no AWS resource created.
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+stacks:
+  failfast:
+    stack: williaumwu:::config0_yamls_repos::codebuild_failfast
+    arguments:
+      failfast_name: codebuild-failfast
+      timeout: 900
+  # Canary: must never run. It depends on the failing stack.
+  canary_key_pair:
+    stack: config0-hub:::aws::ec2_keypair
+    dependencies:
+      - failfast
+    arguments:
+      key_name: codebuild-failfast-canary
