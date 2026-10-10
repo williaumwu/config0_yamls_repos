@@ -6,10 +6,12 @@ terraform {
   required_version = ">= 1.1.0"
 }
 
+# tofu rejects a literal `condition = false` at init, so the condition reads a
+# variable: aws_default_region is never empty, and the condition wants it empty.
 resource "terraform_data" "failfast" {
   lifecycle {
     precondition {
-      condition     = false
+      condition     = var.aws_default_region == ""
       error_message = "codebuild-failfast: deliberate plan failure"
     }
   }
