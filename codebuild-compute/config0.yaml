@@ -1,0 +1,16 @@
+# CON-77 proof: one engine-delegated order on the CodeBuild target (timeout 900
+# > 800) with a per-order compute size. Expected: the CodeBuild build runs on
+# BUILD_GENERAL1_MEDIUM (ComputeTypeOverride), the order completes, the
+# resource record's mod_params.env_vars carries BUILD_COMPUTE_TYPE, and the
+# project's remove fires its destroy at the same size. The stack applies a
+# hashicorp/time sleep: no AWS resource.
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+stacks:
+  sleep:
+    stack: williaumwu:::config0_yamls_repos::engine_timeout
+    arguments:
+      sleep_name: codebuild-compute
+      timeout: 900
+      compute_type: BUILD_GENERAL1_MEDIUM
