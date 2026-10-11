@@ -3,6 +3,11 @@
 One tf_executor order whose execgroup applies a 400 s time_sleep. The config
 sets ``timeout`` (T, default 120) so the apply outlives T on the engine's
 Lambda target. No AWS resource is created.
+
+Also used by ``codebuild-compute/`` (CON-77): at ``timeout`` 900 the order runs
+on CodeBuild, and the ``compute_type`` argument the TFConstructor helper
+declares rides to the build as its compute size. This version locks the
+``tf_executor`` that declares ``compute_type``.
 """
 
 from config0_publisher.terraform import TFConstructor
