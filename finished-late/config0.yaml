@@ -1,0 +1,17 @@
+# CON-90 live repro: the job's one echo order settles in under a minute, but
+# archive.timewait (420 s) holds the job's verdict past archive.timeout (180 s).
+# The schedule worker's timeout closer must leave the job alone, and the job
+# must end completed, not timed_out. No AWS resource.
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+stacks:
+  late:
+    stack: config0-hub:::config0_core::empty_stack
+    arguments:
+      description: con90-finished-late
+    spec:
+      schedule:
+        archive:
+          timeout: 180
+          timewait: 420

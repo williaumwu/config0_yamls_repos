@@ -1,0 +1,10 @@
+# CON-91 live repro: job "bad" declares a conditions.frequency the schedule
+# worker cannot parse. Expected end state: "ok" completed, "bad" failed once
+# with the reason on the final run pipeline document, "handle" completed,
+# the run closed failed with close reason failed:N/A. No AWS resource.
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+stacks:
+  unloadable:
+    stack: williaumwu:::config0_yamls_repos::unloadable_job_test
