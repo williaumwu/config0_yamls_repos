@@ -4,8 +4,8 @@
 # ci-shared buckets and DynamoDB tables, the four Lambdas, the API Gateway, the
 # Step Functions state machine and the completion trigger. app_ci
 # (add_codebuild_ci) then hooks one repository: the deploy key (an EC2 key pair;
-# EC2 keeps the private half in SSM at /ec2/keypair/<key_pair_id>), the callback
-# token, the output bucket, the ci-shared-settings row, the webhook and the
+# EC2 keeps the private half in SSM at /ec2/keypair/<key_pair_id>), the output
+# bucket, the ci-shared-settings row, the webhook and the
 # CodeBuild project. A build's result is the run row in ci-shared-runs (and a
 # Slack message when a webhook is given); the Lambdas do not report to Config0.
 #
