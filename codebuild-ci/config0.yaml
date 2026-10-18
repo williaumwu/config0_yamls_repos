@@ -1,0 +1,45 @@
+# CodeBuild CI (CON-101): the managed CI install and one repository hooked to it.
+#
+# ci_install (setup_codebuild_ci) installs the shared CI for `eval-ci`: the
+# ci-shared buckets and DynamoDB tables, the four Lambdas, the API Gateway, the
+# Step Functions state machine and the completion trigger. app_ci
+# (add_codebuild_ci) then hooks one repository: the deploy key (an EC2 key pair;
+# EC2 keeps the private half in SSM at /ec2/keypair/<key_pair_id>), the callback
+# token, the output bucket, the ci-shared-settings row, the webhook and the
+# CodeBuild project. A build's result is the run row in ci-shared-runs (and a
+# Slack message when a webhook is given); the Lambdas do not report to Config0.
+#
+# github_token is NOT in this file. The input-variable set `github-token`, key
+# `github_token` (a token that can add a deploy key and a webhook on git_repo),
+# is made before this project is added; app_ci names the set under inputvars:,
+# and github_ssh_upload and github_webhook read the key as stack.inputvars.
+#
+# The CI subject is github.com/williaumwu/codebuild-ci-sample: a Dockerfile at
+# its root. The project's default build phase builds that Dockerfile into an
+# image and pushes it to the ECR repository named below, on every push to main.
+# git_repo is the bare repository name: the GitHub provider has no owner set,
+# so it works on the token's own account.
+
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+
+stacks:
+  ci_install:
+    stack: config0-hub:::devops-solutions::setup_codebuild_ci
+    arguments:
+      ci_environment: eval-ci
+
+  app_ci:
+    stack: config0-hub:::devops-solutions::add_codebuild_ci
+    dependencies:
+      - ci_install
+    inputvars:
+      - reference: github-token
+    arguments:
+      ci_environment: eval-ci
+      codebuild_name: codebuild-ci-sample
+      git_repo: codebuild-ci-sample
+      git_url: git@github.com:williaumwu/codebuild-ci-sample.git
+      ecr_repo_name: codebuild-ci-sample
+      branch: main
