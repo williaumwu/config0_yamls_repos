@@ -65,7 +65,7 @@ stacks:
       # placed on the disjoint 10.21.0.0/16 CIDR below.
       vpc_name: config0-story14-vpc-a-484888470684
     connections:
-      - name: dev101-test
+      - name: dev104-test
 
   peer_request:
     stack: config0-hub:::aws_networking::aws_vpc_peering_request
@@ -85,7 +85,7 @@ stacks:
       - vpc_a_outputs
     connections:
       - name: gitops-second
-      - name: dev101-test
+      - name: dev104-test
         env_suffix: _PEER
 
   peer_accept:
@@ -108,7 +108,7 @@ stacks:
       - vpc_a_outputs
       - peer_request_outputs
     connections:
-      - name: dev101-test
+      - name: dev104-test
 
   routes_b:
     stack: config0-hub:::aws_networking::aws_vpc_peering_routes
