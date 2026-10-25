@@ -32,7 +32,7 @@ stacks:
           arguments:
             - cloud_tags_hash
     connections:
-      - name: dev104-test
+      - name: dev103-test
 
   vpc_second:
     stack: config0-hub:::aws_networking::aws_vpc_simple

@@ -8,13 +8,13 @@ labels:
     story: "14"
   vpc_a_record:
     fixture_role: vpc-a
-    fixture_account_id: "484888470684"
+    fixture_account_id: "402909940697"
   peer_request_record:
     fixture_role: peer-request
     fixture_account_id: "530751148851"
   peer_accept_record:
     fixture_role: peer-accept
-    fixture_account_id: "484888470684"
+    fixture_account_id: "402909940697"
   routes_b_record:
     fixture_role: routes-b
     fixture_account_id: "530751148851"
@@ -28,7 +28,7 @@ selectors:
         fixture: story-14-vpc-peering
         story: "14"
         fixture_role: vpc-a
-        fixture_account_id: "484888470684"
+        fixture_account_id: "402909940697"
       expect:
         must_be_one: true
   peer_request_outputs:
@@ -50,7 +50,7 @@ selectors:
         fixture: story-14-vpc-peering
         story: "14"
         fixture_role: peer-accept
-        fixture_account_id: "484888470684"
+        fixture_account_id: "402909940697"
       expect:
         must_be_one: true
 
@@ -63,9 +63,9 @@ stacks:
     arguments:
       # aws_vpc_simple uses its 10.11.0.0/16 default; VPC-B is explicitly
       # placed on the disjoint 10.21.0.0/16 CIDR below.
-      vpc_name: config0-story14-vpc-a-484888470684
+      vpc_name: config0-story14-vpc-a-402909940697
     connections:
-      - name: dev104-test
+      - name: dev103-test
 
   peer_request:
     stack: config0-hub:::aws_networking::aws_vpc_peering_request
@@ -75,17 +75,17 @@ stacks:
     dependencies:
       - vpc_a
     arguments:
-      vpc_peering_name: config0-story14-peer-484888470684-530751148851
+      vpc_peering_name: config0-story14-peer-402909940697-530751148851
       vpc_b_name: config0-story14-vpc-b-530751148851
       vpc_b_cidr_block: 10.21.0.0/16
       vpc_a_id: selector:::vpc_a_outputs::vpc_id:str
-      vpc_a_account_id: "484888470684"
+      vpc_a_account_id: "402909940697"
       vpc_a_region: ap-northeast-1
     selectors:
       - vpc_a_outputs
     connections:
       - name: gitops-second
-      - name: dev104-test
+      - name: dev103-test
         env_suffix: _PEER
 
   peer_accept:
@@ -108,7 +108,7 @@ stacks:
       - vpc_a_outputs
       - peer_request_outputs
     connections:
-      - name: dev104-test
+      - name: dev103-test
 
   routes_b:
     stack: config0-hub:::aws_networking::aws_vpc_peering_routes

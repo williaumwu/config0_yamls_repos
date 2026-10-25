@@ -72,7 +72,7 @@ stacks:
       - general
       - infrastructure
     arguments:
-      s3_bucket: ssm-host-docker-lambda-artifacts-402909940697
+      s3_bucket: ssm-host-docker-lambda-artifacts-484888470684
       aws_region: ap-northeast-1
       install_name: story07
 

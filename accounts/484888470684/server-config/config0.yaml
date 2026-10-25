@@ -58,6 +58,6 @@ stacks:
       - general
       - infrastructure_ssm
     arguments:
-      s3_bucket: server-config-lambda-artifacts-402909940697
+      s3_bucket: server-config-lambda-artifacts-484888470684
       aws_region: ap-northeast-1
       install_name: server-config
