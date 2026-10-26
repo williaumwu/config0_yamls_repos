@@ -1,0 +1,19 @@
+# CON-126: a secret handed to Terraform through TFConstructor(ssm_obj=...).
+# github_ssh_upload reads github_token from the input-variable set named
+# under inputvars: and hands it to the GitHub provider as GITHUB_TOKEN
+# through the sealed SSM parameter (SSM_NAME on the tf_executor order), not
+# as a stack argument. The deploy key lands on williaumwu/codebuild-ci-sample.
+# The set `github-token` (key github_token) is made before this project is added.
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+stacks:
+  deploy_key:
+    stack: config0-hub:::github::github_ssh_upload
+    inputvars:
+      - reference: github-token
+    arguments:
+      repo: codebuild-ci-sample
+      key_name: con126-lambda
+      public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIARh3steCgrMLMRF6FEwxfyM5t6WuuwnvAfxzoEvxfb con126-lambda"
+      read_only: true
