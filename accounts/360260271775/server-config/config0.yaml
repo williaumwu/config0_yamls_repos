@@ -1,0 +1,63 @@
+# Region-level prerequisite. Run this ONCE per region, right after onboarding.
+#
+# It installs the two things every stack that CONFIGURES a server needs before it
+# can reach that server: an EC2 key pair and the EventBridge SSM executor. Any
+# stack that runs commands on a host (mongodb today, redpanda later) reads these
+# by selector on purpose: server-configuration + region.
+#
+# This is NEVER a substack of an environment stack. It is region-scoped, not
+# environment-scoped, which is why it carries no environment label.
+#
+# This replaces the .original bastion host: no public SSH host, no inbound 22, no
+# per-environment jump box to keep patched. Commands travel over SSM instead. That
+# is a deliberate improvement on .original, not an accidental divergence.
+#
+# ssm-host-docker/ (story 07) installs the same two stacks with
+# purpose: ssm-host-docker. That story is the INSTALL TEST; this folder is the
+# production-shaped install.
+
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+
+labels:
+  general:
+    purpose: server-configuration
+    managed_by: config0
+  infrastructure_ssm:
+    cloud: aws
+    area: server-config
+    product: ssm-ec2-exec
+    region: ap-northeast-1
+  infrastructure_keypair:
+    cloud: aws
+    area: server-config
+    product: ssh-key-pair
+    region: ap-northeast-1
+
+stacks:
+  # The region's shared EC2 key pair. aws_ec2_server requires a key pair even
+  # when nothing opens inbound 22.
+  keypair:
+    stack: config0-hub:::aws::ec2_keypair
+    labels:
+      - general
+      - infrastructure_keypair
+    arguments:
+      key_name: server-config-apne1
+
+  # The EventBridge-v2 SSM executor install. Its first job creates the
+  # Lambda-artifacts bucket named by s3_bucket. Its record
+  # (resource_type=ssm_ec2_exec_eventbridge_install) promotes
+  # instance_profile_name, managed_tag_key/managed_tag_value, state_machine_arn,
+  # bucket_name, payload_key_layout and kms_key_arn - the single source every
+  # server-configuring stack in this region reads.
+  ssm_install:
+    stack: config0-hub:::aws::ssm_ec2_exec_eventbridge_install
+    labels:
+      - general
+      - infrastructure_ssm
+    arguments:
+      s3_bucket: server-config-lambda-artifacts-360260271775
+      aws_region: ap-northeast-1
+      install_name: server-config
