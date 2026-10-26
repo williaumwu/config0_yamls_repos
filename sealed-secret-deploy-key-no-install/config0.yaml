@@ -1,0 +1,16 @@
+# CON-126 step 6 (negative): the same stack in a region of this account that
+# has NO ssm_ec2_exec_eventbridge_install record. Expected: the run fails
+# loud in stack.add_secret naming the install; no deploy key is created.
+global:
+  arguments:
+    aws_default_region: us-west-2
+stacks:
+  deploy_key:
+    stack: config0-hub:::github::github_ssh_upload
+    inputvars:
+      - reference: github-token
+    arguments:
+      repo: codebuild-ci-sample
+      key_name: con126-noinstall
+      public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHAC7pz1Un7QyyDNrJINGzLrnBhheQrIXzAjde+zxybj con126-noinstall"
+      read_only: true

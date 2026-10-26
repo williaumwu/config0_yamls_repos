@@ -1,0 +1,17 @@
+# CON-126 step 4: the sealed-secret deploy key with its tf_executor order on
+# the engine's CodeBuild target (timeout above 800 s routes it there). Same
+# ssm_obj path as sealed-secret-deploy-key/, different key and title.
+global:
+  arguments:
+    aws_default_region: ap-northeast-1
+stacks:
+  deploy_key:
+    stack: config0-hub:::github::github_ssh_upload
+    inputvars:
+      - reference: github-token
+    arguments:
+      repo: codebuild-ci-sample
+      key_name: con126-codebuild
+      public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFJ1HsAm4h3LYEcaWo1TpNyE6XQzNSwNtdk1gLMzI4R3 con126-codebuild"
+      read_only: true
+      timeout: 900
