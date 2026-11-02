@@ -1,5 +1,8 @@
-# Phase 2 AI workflows acceptance: private subnets use a NAT gateway for egress;
-# public subnets supply the public-subnet placement option.
+# AI workflows acceptance network: a VPC whose private subnets reach the internet
+# through the auto-scaling NAT instance stack (aws_nat_inst_vpc, t3.nano class),
+# never a NAT gateway. Public subnets supply the public-subnet placement option.
+# Same composition as the vpc/ scenario: the nat stack reads the vpc resource
+# record through the vpc_vars selector, so it runs after the vpc stack writes back.
 
 global:
   arguments:
@@ -14,6 +17,17 @@ labels:
     product: vpc
     area: network
 
+selectors:
+  vpc_vars:
+    match:
+      filter:
+        resource_type: vpc
+      labels:
+        environment: dev
+        purpose: ai-workflows-nat
+        area: network
+        cloud: aws
+
 stacks:
   vpc:
     stack: config0-hub:::aws_networking::aws_vpc_simple
@@ -22,7 +36,7 @@ stacks:
       - infrastructure
     arguments:
       vpc_name: ai-workflows-vpc-nat
-      enable_nat_gateway: true
+      enable_nat_gateway: false
       cloud_tags_hash:
         environment: dev
         purpose: ai-workflows-nat
@@ -31,3 +45,20 @@ stacks:
         to_base64:
           arguments:
             - cloud_tags_hash
+
+  nat:
+    stack: config0-hub:::aws_networking::aws_nat_inst_vpc
+    labels:
+      - general
+      - infrastructure
+    dependencies:
+      - vpc
+    arguments:
+      service_name: ai-workflows-nat
+      vpc_id: selector:::vpc_vars::vpc_id
+      public_subnet_ids: selector:::vpc_vars::public_subnet_ids:csv
+      private_route_table_id: selector:::vpc_vars::private_route_table_id
+      instance_types: t3.nano,t3a.nano
+      cidr_ingress_accept: 0.0.0.0/0
+    selectors:
+      - vpc_vars
