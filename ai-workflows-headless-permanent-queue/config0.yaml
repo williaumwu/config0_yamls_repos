@@ -1,0 +1,77 @@
+# Phase 4 AI workflows acceptance, step 2, the queue: the permanent scenario with each call
+# sleeping 150 s first (the parallel anchor's FIRE passes run about a minute apart, so
+# 10-second calls never queued). With one slot, calls 2 and 3 wait in the server's queue
+# while call 1 runs; each call's deadline was fixed at its FIRE.
+#
+# The card server agent-perm2 (Add server on the AI workflows card, public subnet,
+# artifact prefix s3://config0-tmp-62635338/ai-acceptance/permanent/, key_set_names
+# with ACCEPTANCE_REPO_TOKEN so it may clone the private repository) was created after
+# the phase 4 publish, so its first boot installed the runner daemon. The test stack
+# ai_submit_check in its existing-hostname mode puts three submit calls under one
+# parallel anchor; a t3.micro has 2 vCPUs, so the daemon runs one order at a time and
+# the others wait in the queue, spending their own deadline (fixed at each FIRE). Then
+# one empty_stack order per call reads that call's agent_result row through a selector
+# (the same result validation as the per-run check). No server is created or removed.
+
+global:
+  metadata:
+    workflow:
+      category: ai
+  arguments:
+    aws_default_region: ap-northeast-1
+
+selectors:
+  permq_1:
+    match:
+      filter:
+        resource_type: agent_result
+      keys:
+        name: permq-call-1
+  permq_2:
+    match:
+      filter:
+        resource_type: agent_result
+      keys:
+        name: permq-call-2
+  permq_3:
+    match:
+      filter:
+        resource_type: agent_result
+      keys:
+        name: permq-call-3
+
+stacks:
+  perm:
+    stack: williaumwu:::config0_yamls_repos::ai_submit_check
+    selectors:
+      - permq_1
+      - permq_2
+      - permq_3
+    arguments:
+      hostname: agent-perm2
+      subnet_id: subnet-0df609094a0975441   # unused with hostname; the stack requires it
+      parallel: true
+      repository_url: https://github.com/williaumwu/config0-ai-workflows-acceptance
+      branch: acceptance
+      repository_credential_set_name: ACCEPTANCE_REPO_TOKEN
+      artifact_prefix: s3://config0-tmp-62635338/ai-acceptance/permanent/
+      max_turns: 6
+      max_budget_usd: 0.5
+      phase2complete_timeout: 1800
+      run_timeout: 5400
+      task: >-
+        Read src/greeting.py. Do not change any file. Report the name of the
+        function it defines and the exact string that function returns for the
+        name "Config0".
+      task_schema: >-
+        {"type": "object", "required": ["function_name", "greeting"],
+        "properties": {"function_name": {"type": "string"}, "greeting": {"type": "string"}},
+        "additionalProperties": false}
+      calls: >-
+        [{"call_name": "permq-call-1", "adapter": "pi", "model": "openai/gpt-5-mini", "key_set_name": "OPENAI_API_KEY", "result_selector": "permq_1", "task": "First use your bash tool to run exactly `sleep 150` and wait for it to finish. Then read src/greeting.py, do not change any file, and report the name of the function it defines and the exact string that function returns for the name \"Config0\"."},
+        {"call_name": "permq-call-2", "adapter": "pi", "model": "openai/gpt-5-mini", "key_set_name": "OPENAI_API_KEY", "result_selector": "permq_2", "task": "First use your bash tool to run exactly `sleep 150` and wait for it to finish. Then read src/greeting.py, do not change any file, and report the name of the function it defines and the exact string that function returns for the name \"Config0\"."},
+        {"call_name": "permq-call-3", "adapter": "pi", "model": "openai/gpt-5-mini", "key_set_name": "OPENAI_API_KEY", "result_selector": "permq_3", "task": "First use your bash tool to run exactly `sleep 150` and wait for it to finish. Then read src/greeting.py, do not change any file, and report the name of the function it defines and the exact string that function returns for the name \"Config0\"."}]
+    spec:
+      schedule:
+        archive:
+          timeout: 4800
