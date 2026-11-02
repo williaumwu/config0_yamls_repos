@@ -46,7 +46,7 @@ stacks:
       - notes_group
     arguments:
       # Fixtures.
-      subnet_id: subnet-0d8be45b720607abd   # phase 2's NAT-backed private subnet (ai-workflows-vpc-nat)
+      subnet_id: subnet-09fa9ac5614217172   # phase 2's NAT-backed private subnet (ai-workflows-vpc-nat)
       repository_url: FIXTURE-test-repository-https-url
       repository_credential_set_name: FIXTURE-test-repository-read-credential-set
       artifact_prefix: FIXTURE-artifact-prefix-s3-url
