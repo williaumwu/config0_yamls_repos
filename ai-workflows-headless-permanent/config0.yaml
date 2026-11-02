@@ -6,6 +6,7 @@
 # agent_submit calls go to it at once; a t3.micro has 2 vCPUs, so the daemon runs one
 # order at a time and the others wait in the queue, spending their own deadline
 # (fixed at each FIRE). No server is created or removed by this project.
+# The calls use pi: the claude key fixture was the OpenAI key.
 
 global:
   metadata:
@@ -18,9 +19,9 @@ global:
     branch: acceptance
     repository_credential_set_name: ACCEPTANCE_REPO_TOKEN
     artifact_prefix: s3://config0-tmp-62635338/ai-acceptance/permanent/
-    adapter: claude
-    model: haiku
-    key_set_name: CLAUDE_CODE_OAUTH_TOKEN
+    adapter: pi
+    model: openai/gpt-5-mini
+    key_set_name: OPENAI_API_KEY
     max_turns: 6
     max_budget_usd: 0.5
     phase2complete_timeout: 1800
