@@ -1,0 +1,16 @@
+# Phase 4 AI workflows acceptance, step 6: an ai workflow stack's run_timeout above
+# 86400 s is refused at add-project; nothing is dispatched.
+
+global:
+  metadata:
+    workflow:
+      category: ai
+  arguments:
+    aws_default_region: ap-northeast-1
+
+stacks:
+  toolong:
+    stack: williaumwu:::config0_yamls_repos::ai_clock_probe
+    arguments:
+      label: toolong
+      run_timeout: 86401

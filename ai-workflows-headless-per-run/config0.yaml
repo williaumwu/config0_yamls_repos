@@ -5,10 +5,9 @@
 # pi in its own run (its own server ai-<run id>). Each stack runs on its own
 # frozen run_timeout (7200 and 6600, step 5 reads both).
 #
-# Placement: agent_submit_per_run takes no public_subnet argument and the server's
-# egress check refuses an internet-gateway route without it, so these per-run
-# servers use the private subnet behind the t3.nano NAT instance of
-# ai-workflows-vpc-nat (no NAT gateway, no SSM interface endpoints).
+# Placement (attempt 2): agent_submit_per_run takes public_subnet since found-issues
+# batch 2, so the per-run servers sit on the public subnet with the internet gateway
+# (the test-network rule; no NAT gateway, no SSM interface endpoints).
 #
 # Fixtures: the test repository williaumwu/config0-ai-workflows-acceptance (private,
 # branch acceptance) and its read credential set ACCEPTANCE_REPO_TOKEN; the key
@@ -21,7 +20,8 @@ global:
       category: ai
   arguments:
     aws_default_region: ap-northeast-1
-    subnet_id: subnet-09fa9ac5614217172   # private subnet of ai-workflows-vpc-nat, NAT instance egress
+    subnet_id: subnet-0df609094a0975441   # public subnet of ai-workflows-vpc-nat
+    public_subnet: true
     repository_url: https://github.com/williaumwu/config0-ai-workflows-acceptance
     branch: acceptance
     repository_credential_set_name: ACCEPTANCE_REPO_TOKEN

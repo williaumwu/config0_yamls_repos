@@ -1,0 +1,59 @@
+# Phase 4 AI workflows acceptance, step 8, the duplicate call name: three submit calls
+# in one run, one after another, to the card server agent-perm2; the third reuses the
+# first call's name. The third call's finalize pass must fail loud and leave the first
+# call's agent_result row unchanged. No server is created or removed.
+
+global:
+  metadata:
+    workflow:
+      category: ai
+  arguments:
+    aws_default_region: ap-northeast-1
+
+selectors:
+  dup_a:
+    match:
+      filter:
+        resource_type: agent_result
+      keys:
+        name: dup-a
+  dup_b:
+    match:
+      filter:
+        resource_type: agent_result
+      keys:
+        name: dup-b
+
+stacks:
+  dup:
+    stack: williaumwu:::config0_yamls_repos::ai_submit_check
+    selectors:
+      - dup_a
+      - dup_b
+    arguments:
+      hostname: agent-perm2
+      subnet_id: subnet-0df609094a0975441   # unused with hostname; the stack requires it
+      repository_url: https://github.com/williaumwu/config0-ai-workflows-acceptance
+      branch: acceptance
+      repository_credential_set_name: ACCEPTANCE_REPO_TOKEN
+      artifact_prefix: s3://config0-tmp-62635338/ai-acceptance/permanent/
+      max_turns: 6
+      max_budget_usd: 0.5
+      phase2complete_timeout: 1800
+      run_timeout: 7200
+      task: >-
+        Read src/greeting.py. Do not change any file. Report the name of the
+        function it defines and the exact string that function returns for the
+        name "Config0".
+      task_schema: >-
+        {"type": "object", "required": ["function_name", "greeting"],
+        "properties": {"function_name": {"type": "string"}, "greeting": {"type": "string"}},
+        "additionalProperties": false}
+      calls: >-
+        [{"call_name": "dup-a", "adapter": "pi", "model": "openai/gpt-5-mini", "key_set_name": "OPENAI_API_KEY", "result_selector": "dup_a"},
+        {"call_name": "dup-b", "adapter": "pi", "model": "openai/gpt-5-mini", "key_set_name": "OPENAI_API_KEY", "result_selector": "dup_b"},
+        {"call_name": "dup-a", "adapter": "pi", "model": "openai/gpt-5-mini", "key_set_name": "OPENAI_API_KEY", "result_selector": "dup_a"}]
+    spec:
+      schedule:
+        archive:
+          timeout: 6000

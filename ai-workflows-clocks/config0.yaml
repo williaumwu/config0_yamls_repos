@@ -1,0 +1,26 @@
+# Phase 4 AI workflows acceptance, step 5: frozen AI clocks on every dispatch path.
+# root omits run_timeout (the scanned default of ai_clock_probe, 5400 at add-project);
+# dependent sets 4200 and starts when root completes (completion-triggered dispatch);
+# the destroy path runs the default destroy stack on its declared run_timeout. The
+# acceptance reruns root, changes ai_clock_probe's default and rescans, reruns root
+# again: the frozen value stays. No server, no model call.
+
+global:
+  metadata:
+    workflow:
+      category: ai
+  arguments:
+    aws_default_region: ap-northeast-1
+
+stacks:
+  root:
+    stack: williaumwu:::config0_yamls_repos::ai_clock_probe
+    arguments:
+      label: root
+  dependent:
+    stack: williaumwu:::config0_yamls_repos::ai_clock_probe
+    dependencies:
+      - root
+    arguments:
+      label: dependent
+      run_timeout: 4200

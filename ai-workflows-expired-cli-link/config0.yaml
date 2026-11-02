@@ -1,0 +1,53 @@
+# Phase 4 AI workflows acceptance, step 7: a worker invocation after the original CLI
+# URL's validity window (3 h). The runner daemon on the card server agent-clock is
+# stopped over SSM before this submit, so the call waits in the server's queue; it is
+# started again after 3 h. The call then runs and posts its result, and the finalize
+# pass runs in a worker invocation more than 3 h after FIRE: its backload must supply a
+# fresh CLI link before the zip fetch. P (phase2complete_timeout) is 4 h 30 min so the
+# deadline outlives the stop; run_timeout and the schedule cover P with margin.
+
+global:
+  metadata:
+    workflow:
+      category: ai
+  arguments:
+    aws_default_region: ap-northeast-1
+
+selectors:
+  clock_link:
+    match:
+      filter:
+        resource_type: agent_result
+      keys:
+        name: expired-link
+
+stacks:
+  link:
+    stack: williaumwu:::config0_yamls_repos::ai_submit_check
+    selectors:
+      - clock_link
+    arguments:
+      hostname: agent-clock
+      subnet_id: subnet-0df609094a0975441   # unused with hostname; the stack requires it
+      repository_url: https://github.com/williaumwu/config0-ai-workflows-acceptance
+      branch: acceptance
+      repository_credential_set_name: ACCEPTANCE_REPO_TOKEN
+      artifact_prefix: s3://config0-tmp-62635338/ai-acceptance/expired-link/
+      max_turns: 6
+      max_budget_usd: 0.5
+      phase2complete_timeout: 16200
+      run_timeout: 25200
+      task: >-
+        Read src/greeting.py. Do not change any file. Report the name of the
+        function it defines and the exact string that function returns for the
+        name "Config0".
+      task_schema: >-
+        {"type": "object", "required": ["function_name", "greeting"],
+        "properties": {"function_name": {"type": "string"}, "greeting": {"type": "string"}},
+        "additionalProperties": false}
+      calls: >-
+        [{"call_name": "expired-link", "adapter": "pi", "model": "openai/gpt-5-mini", "key_set_name": "OPENAI_API_KEY", "result_selector": "clock_link"}]
+    spec:
+      schedule:
+        archive:
+          timeout: 25200

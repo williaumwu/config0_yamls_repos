@@ -20,6 +20,10 @@ calls: a JSON list of {"call_name", "adapter", "model", "key_set_name",
 result_selector names a selector in config0.yaml listed on this stack. A call name
 used twice fails at the second call's finalize pass (step 8). max_concurrent, when
 set, is the server's daemon slot count (agent_server's tfvar), for the cancel check.
+parallel (attempt 2): the submit orders go under one parallel anchor (set_parallel, as
+agent_attempts_per_run does), so two calls run at once (step 3) or queue past the
+server's slots (step 2). hostname (attempt 2): submit to that existing server (a card
+server) instead; no server is created or removed.
 """
 
 import json
@@ -51,6 +55,8 @@ def run(stackargs):
     stack.parse.add_optional(key="phase2complete_timeout", default=1800, types="int")
     stack.parse.add_optional(key="run_timeout", default=7200, types="int")
     stack.parse.add_optional(key="max_concurrent", types="int")
+    stack.parse.add_optional(key="parallel", default=False, types="bool")
+    stack.parse.add_optional(key="hostname", types="str")
 
     stack.add_substack("config0-hub:::aws::agent_server")
     stack.add_substack("config0-hub:::aws::agent_submit")
@@ -67,7 +73,8 @@ def run(stackargs):
         if not CALL_KEYS <= set(call) <= CALL_KEYS | CALL_OPTIONAL:
             raise ValueError(f"each call has {sorted(CALL_KEYS)}, optionally {sorted(CALL_OPTIONAL)}; got {sorted(call)}")
 
-    hostname = f"ai-{stack.run_id.replace('_', '-')}"
+    existing = stack.get_attr("hostname")
+    hostname = existing or f"ai-{stack.run_id.replace('_', '-')}"
 
     key_set_names = sorted({call["key_set_name"] for call in calls})
     if stack.get_attr("repository_credential_set_name"):
@@ -83,12 +90,15 @@ def run(stackargs):
                         "lifetime": "per_run"}
     if stack.get_attr("max_concurrent"):
         server_arguments["max_concurrent"] = stack.max_concurrent
-    stack.agent_server.insert(display=True,
-                              arguments=server_arguments,
-                              human_description=f"Create the per-run agent server {hostname}")
-    stack.wait_all()
+    if not existing:
+        stack.agent_server.insert(display=True,
+                                  arguments=server_arguments,
+                                  human_description=f"Create the per-run agent server {hostname}")
+        stack.wait_all()
 
     shared = {key: stack.get_attr(key) for key in SUBMIT_SHARED if stack.get_attr(key) is not None}
+    if stack.parallel:
+        stack.set_parallel()
     for call in calls:
         arguments = dict(shared, hostname=hostname, call_name=call["call_name"],
                          adapter=call["adapter"], key_set_name=call["key_set_name"])
@@ -99,6 +109,8 @@ def run(stackargs):
         stack.agent_submit.insert(display=True,
                                   arguments=arguments,
                                   human_description=f'Submit "{call["call_name"]}" to {hostname}')
+    if stack.parallel:
+        stack.unset_parallel()
     stack.wait_all()
 
     for call in calls:
@@ -106,6 +118,9 @@ def run(stackargs):
                                  arguments={"description": f"selector:::{call['result_selector']}::result_ref"},
                                  human_description=f'Read the result of "{call["call_name"]}"')
     stack.wait_all()
+
+    if existing:
+        return stack.get_results()
 
     stack.delete_resource.insert(display=True,
                                  arguments={"resource_type": "server",

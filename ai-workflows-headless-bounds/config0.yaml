@@ -6,9 +6,17 @@
 #   exist: the daemon cannot read it and posts a failed envelope.
 # - restart: the agent sleeps 240 s through its bash tool; the acceptance restarts the
 #   runner daemon over SSM during the sleep and reads what the restart does.
+# - silence (attempt 2): the agent sleeps 1000 s through its bash tool: no event for
+#   15 minutes stops the turn, which reported no usage, so spend is unknown and the
+#   call fails.
+# - outage (attempt 2): the agent sleeps 300 s; the acceptance drops the server's
+#   traffic to the saas-api receiver with an iptables rule over SSM while the call
+#   runs, then removes it, and reads the progress-post retries and the outcome.
+# The restart case is also the unknown-usage case: the turn running at the restart
+# never reported its usage.
 # A failed call leaves its server, queue and role for the user (removed in step 11).
-# Servers on the public subnet with the internet gateway; pi (the claude key fixture
-# was the OpenAI key).
+# Servers on the public subnet with the internet gateway; pi (claude's bash tool times
+# out at about 2 minutes).
 
 global:
   metadata:
@@ -36,6 +44,19 @@ selectors:
         resource_type: agent_result
       keys:
         name: bounds-restart
+
+  bounds_silence:
+    match:
+      filter:
+        resource_type: agent_result
+      keys:
+        name: bounds-silence
+  bounds_outage:
+    match:
+      filter:
+        resource_type: agent_result
+      keys:
+        name: bounds-outage
 
 stacks:
   invalid:
@@ -117,6 +138,62 @@ stacks:
         "additionalProperties": false}
       calls: >-
         [{"call_name": "bounds-restart", "adapter": "pi", "model": "openai/gpt-5-mini", "key_set_name": "OPENAI_API_KEY", "result_selector": "bounds_restart", "task": "First use your bash tool to run exactly `sleep 240` and wait for it to finish. Then read src/greeting.py, do not change any file, and report the name of the function it defines and the exact string that function returns for the name \"Config0\"."}]
+    spec:
+      schedule:
+        archive:
+          timeout: 6000
+
+  silence:
+    stack: williaumwu:::config0_yamls_repos::ai_submit_check
+    selectors:
+      - bounds_silence
+    arguments:
+      subnet_id: subnet-0df609094a0975441   # public subnet of ai-workflows-vpc-nat
+      public_subnet: true
+      repository_url: https://github.com/williaumwu/config0-ai-workflows-acceptance
+      branch: acceptance
+      repository_credential_set_name: ACCEPTANCE_REPO_TOKEN
+      max_turns: 6
+      max_budget_usd: 0.5
+      phase2complete_timeout: 1800
+      run_timeout: 7200
+      artifact_prefix: s3://config0-tmp-62635338/ai-acceptance/bounds-silence/
+      task: >-
+        Read src/greeting.py. Do not change any file. Report the name of the function it defines and the exact string that function returns for the name "Config0".
+      task_schema: >-
+        {"type": "object", "required": ["function_name", "greeting"],
+        "properties": {"function_name": {"type": "string"}, "greeting": {"type": "string"}},
+        "additionalProperties": false}
+      calls: >-
+        [{"call_name": "bounds-silence", "adapter": "pi", "model": "openai/gpt-5-mini", "key_set_name": "OPENAI_API_KEY", "result_selector": "bounds_silence", "task": "First use your bash tool to run exactly `sleep 1000` and wait for it to finish. Then read src/greeting.py, do not change any file, and report the name of the function it defines and the exact string that function returns for the name \"Config0\"."}]
+    spec:
+      schedule:
+        archive:
+          timeout: 6000
+
+  outage:
+    stack: williaumwu:::config0_yamls_repos::ai_submit_check
+    selectors:
+      - bounds_outage
+    arguments:
+      subnet_id: subnet-0df609094a0975441   # public subnet of ai-workflows-vpc-nat
+      public_subnet: true
+      repository_url: https://github.com/williaumwu/config0-ai-workflows-acceptance
+      branch: acceptance
+      repository_credential_set_name: ACCEPTANCE_REPO_TOKEN
+      max_turns: 6
+      max_budget_usd: 0.5
+      phase2complete_timeout: 1800
+      run_timeout: 7200
+      artifact_prefix: s3://config0-tmp-62635338/ai-acceptance/bounds-outage/
+      task: >-
+        Read src/greeting.py. Do not change any file. Report the name of the function it defines and the exact string that function returns for the name "Config0".
+      task_schema: >-
+        {"type": "object", "required": ["function_name", "greeting"],
+        "properties": {"function_name": {"type": "string"}, "greeting": {"type": "string"}},
+        "additionalProperties": false}
+      calls: >-
+        [{"call_name": "bounds-outage", "adapter": "pi", "model": "openai/gpt-5-mini", "key_set_name": "OPENAI_API_KEY", "result_selector": "bounds_outage", "task": "First use your bash tool to run exactly `sleep 300` and wait for it to finish. Then read src/greeting.py, do not change any file, and report the name of the function it defines and the exact string that function returns for the name \"Config0\"."}]
     spec:
       schedule:
         archive:

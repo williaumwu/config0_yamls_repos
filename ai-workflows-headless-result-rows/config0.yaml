@@ -2,8 +2,8 @@
 # (result row identity).
 #
 # The test stack williaumwu:::config0_yamls_repos::ai_submit_check creates one per-run
-# server, submits two calls with different call names to it (both pi; the claude key fixture
-# was the OpenAI key), then one
+# server, submits two calls with different call names to it (attempt 2: one claude call and
+# one pi call, one real call per adapter), then one
 # empty_stack order per call reads that call's agent_result row through a selector
 # (resource_type agent_result, keys.name the call name, must_be_one, scoped to this
 # run), then removes the server. Rerun the stack for the second run: two more rows,
@@ -22,12 +22,12 @@ global:
     aws_default_region: ap-northeast-1
 
 selectors:
-  pi_row_a:
+  claude_row_a:
     match:
       filter:
         resource_type: agent_result
       keys:
-        name: pi-rows-a
+        name: claude-rows-a
   pi_row_b:
     match:
       filter:
@@ -39,7 +39,7 @@ stacks:
   rows:
     stack: williaumwu:::config0_yamls_repos::ai_submit_check
     selectors:
-      - pi_row_a
+      - claude_row_a
       - pi_row_b
     arguments:
       subnet_id: subnet-0df609094a0975441   # public subnet of ai-workflows-vpc-nat
@@ -61,8 +61,8 @@ stacks:
         "properties": {"function_name": {"type": "string"}, "greeting": {"type": "string"}},
         "additionalProperties": false}
       calls: >-
-        [{"call_name": "pi-rows-a", "adapter": "pi", "model": "openai/gpt-5-mini",
-        "key_set_name": "OPENAI_API_KEY", "result_selector": "pi_row_a"},
+        [{"call_name": "claude-rows-a", "adapter": "claude", "model": "haiku",
+        "key_set_name": "CLAUDE_CODE_OAUTH_TOKEN", "result_selector": "claude_row_a"},
         {"call_name": "pi-rows-b", "adapter": "pi", "model": "openai/gpt-5-mini",
         "key_set_name": "OPENAI_API_KEY", "result_selector": "pi_row_b"}]
     spec:
