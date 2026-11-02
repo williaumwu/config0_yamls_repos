@@ -10,7 +10,7 @@ def run(stackargs):
 
     stack = newStack(stackargs)
 
-    stack.parse.add_optional(key="run_timeout", default=5400, types="int")
+    stack.parse.add_optional(key="run_timeout", default=4800, types="int")
     stack.parse.add_optional(key="label", default="clock probe", types="str")
 
     stack.add_substack("config0-hub:::config0_core::empty_stack")
