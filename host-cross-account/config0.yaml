@@ -2,7 +2,8 @@
 # Hub (570017720022) holds the tmp bucket the done-marker lives in; every stack
 # below creates its resources in the connected account 604227045267 by naming
 # the connection gitops-second. Smallest chain that ends in one host order:
-# key pair, executor install, VPC with SSM endpoints + NAT, private server,
+# key pair, executor install, VPC plus the nano NAT instance (no NAT gateway,
+# no SSM interface endpoints: the test-network rule of 2026-11-02), private server,
 # host configuration. Modelled on ssm-host-docker/.
 #
 # Precondition: POST /api/v1/connections with account_name gitops-second.
@@ -79,8 +80,8 @@ stacks:
       - key_pair
     arguments:
       vpc_name: host-xacct-vpc
-      enable_ssm_endpoints: true
-      enable_nat_gateway: true
+      enable_ssm_endpoints: false
+      enable_nat_gateway: false
       cloud_tags_hash:
         environment: dev
         purpose: host-xacct
@@ -92,6 +93,27 @@ stacks:
     connections:
       - name: gitops-second
 
+  # The NAT instance for the private subnet, in the connected account too; it
+  # reads the VPC record through network_vars, so it runs after the vpc stack.
+  nat:
+    stack: config0-hub:::aws_networking::aws_nat_inst_vpc
+    labels:
+      - general
+      - infrastructure
+    dependencies:
+      - vpc
+    arguments:
+      service_name: host-xacct-nat
+      vpc_id: selector:::network_vars::vpc_id
+      public_subnet_ids: selector:::network_vars::public_subnet_ids:csv
+      private_route_table_id: selector:::network_vars::private_route_table_id
+      instance_types: t3.nano,t3a.nano
+      cidr_ingress_accept: 0.0.0.0/0
+    selectors:
+      - network_vars
+    connections:
+      - name: gitops-second
+
   server:
     stack: config0-hub:::aws::aws_ec2_server
     labels:
@@ -99,6 +121,7 @@ stacks:
       - infrastructure
     dependencies:
       - vpc
+      - nat
       - ssm_executor_install
     arguments:
       hostname: host-xacct-01
