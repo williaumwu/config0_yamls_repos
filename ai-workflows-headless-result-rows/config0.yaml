@@ -2,7 +2,8 @@
 # (result row identity).
 #
 # The test stack williaumwu:::config0_yamls_repos::ai_submit_check creates one per-run
-# server, submits two calls with different call names to it (claude and pi), then one
+# server, submits two calls with different call names to it (both pi; the claude key fixture
+# was the OpenAI key), then one
 # empty_stack order per call reads that call's agent_result row through a selector
 # (resource_type agent_result, keys.name the call name, must_be_one, scoped to this
 # run), then removes the server. Rerun the stack for the second run: two more rows,
@@ -21,13 +22,13 @@ global:
     aws_default_region: ap-northeast-1
 
 selectors:
-  claude_row:
+  pi_row_a:
     match:
       filter:
         resource_type: agent_result
       keys:
-        name: claude-rows-a
-  pi_row:
+        name: pi-rows-a
+  pi_row_b:
     match:
       filter:
         resource_type: agent_result
@@ -38,8 +39,8 @@ stacks:
   rows:
     stack: williaumwu:::config0_yamls_repos::ai_submit_check
     selectors:
-      - claude_row
-      - pi_row
+      - pi_row_a
+      - pi_row_b
     arguments:
       subnet_id: subnet-0df609094a0975441   # public subnet of ai-workflows-vpc-nat
       public_subnet: true
@@ -60,10 +61,10 @@ stacks:
         "properties": {"function_name": {"type": "string"}, "greeting": {"type": "string"}},
         "additionalProperties": false}
       calls: >-
-        [{"call_name": "claude-rows-a", "adapter": "claude", "model": "haiku",
-        "key_set_name": "CLAUDE_CODE_OAUTH_TOKEN", "result_selector": "claude_row"},
+        [{"call_name": "pi-rows-a", "adapter": "pi", "model": "openai/gpt-5-mini",
+        "key_set_name": "OPENAI_API_KEY", "result_selector": "pi_row_a"},
         {"call_name": "pi-rows-b", "adapter": "pi", "model": "openai/gpt-5-mini",
-        "key_set_name": "OPENAI_API_KEY", "result_selector": "pi_row"}]
+        "key_set_name": "OPENAI_API_KEY", "result_selector": "pi_row_b"}]
     spec:
       schedule:
         # the server, two parked calls (one slot each in turn), two reads, the removal.

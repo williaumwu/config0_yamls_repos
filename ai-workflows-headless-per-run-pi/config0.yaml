@@ -1,0 +1,51 @@
+# Phase 4 AI workflows acceptance, step 1, the pi adapter alone: one real headless
+# call on a per-run server (agent_submit_per_run), then the chain removes the server.
+# (ai-workflows-headless-per-run runs claude first and pi as its dependent; the
+# claude key fixture was the OpenAI key, so its claude call fails and pi never starts.)
+#
+# Placement: agent_submit_per_run takes no public_subnet argument and the server's
+# egress check refuses an internet-gateway route without it, so these per-run
+# servers use the private subnet behind the t3.nano NAT instance of
+# ai-workflows-vpc-nat (no NAT gateway, no SSM interface endpoints).
+#
+# Fixtures: the test repository williaumwu/config0-ai-workflows-acceptance (private,
+# branch acceptance) and its read credential set ACCEPTANCE_REPO_TOKEN; the key
+# sets CLAUDE_CODE_OAUTH_TOKEN and OPENAI_API_KEY; the artifact prefix in the
+# tenant's existing tmp bucket (no customer bucket exists in 570017720022).
+
+global:
+  metadata:
+    workflow:
+      category: ai
+  arguments:
+    aws_default_region: ap-northeast-1
+    subnet_id: subnet-09fa9ac5614217172   # private subnet of ai-workflows-vpc-nat, NAT instance egress
+    repository_url: https://github.com/williaumwu/config0-ai-workflows-acceptance
+    branch: acceptance
+    repository_credential_set_name: ACCEPTANCE_REPO_TOKEN
+    artifact_prefix: s3://config0-tmp-62635338/ai-acceptance/per-run/
+    max_turns: 6
+    max_budget_usd: 0.5
+    phase2complete_timeout: 1800
+    task: >-
+      Read src/greeting.py. Do not change any file. Report the name of the
+      function it defines and the exact string that function returns for the
+      name "Config0".
+    task_schema: >-
+      {"type": "object", "required": ["function_name", "greeting"],
+      "properties": {"function_name": {"type": "string"}, "greeting": {"type": "string"}},
+      "additionalProperties": false}
+
+stacks:
+  pi:
+    stack: config0-hub:::aws::agent_submit_per_run
+    arguments:
+      call_name: pi-greeting
+      adapter: pi
+      model: openai/gpt-5-mini
+      key_set_name: OPENAI_API_KEY
+      run_timeout: 6600
+    spec:
+      schedule:
+        archive:
+          timeout: 4800
