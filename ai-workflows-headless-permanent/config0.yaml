@@ -1,0 +1,63 @@
+# Phase 4 AI workflows acceptance, step 2: submit against a card server by hostname.
+#
+# The card server agent-perm (Add server on the AI workflows card, public subnet,
+# artifact prefix s3://config0-tmp-62635338/ai-acceptance/permanent/) was created
+# after the phase 4 publish, so its first boot installed the runner daemon. Three
+# agent_submit calls go to it at once; a t3.micro has 2 vCPUs, so the daemon runs one
+# order at a time and the others wait in the queue, spending their own deadline
+# (fixed at each FIRE). No server is created or removed by this project.
+
+global:
+  metadata:
+    workflow:
+      category: ai
+  arguments:
+    aws_default_region: ap-northeast-1
+    hostname: agent-perm
+    repository_url: https://github.com/williaumwu/config0-ai-workflows-acceptance
+    branch: acceptance
+    repository_credential_set_name: ACCEPTANCE_REPO_TOKEN
+    artifact_prefix: s3://config0-tmp-62635338/ai-acceptance/permanent/
+    adapter: claude
+    model: haiku
+    key_set_name: CLAUDE_CODE_OAUTH_TOKEN
+    max_turns: 6
+    max_budget_usd: 0.5
+    phase2complete_timeout: 1800
+    run_timeout: 3600
+    task: >-
+      Read src/greeting.py. Do not change any file. Report the name of the
+      function it defines and the exact string that function returns for the
+      name "Config0".
+    task_schema: >-
+      {"type": "object", "required": ["function_name", "greeting"],
+      "properties": {"function_name": {"type": "string"}, "greeting": {"type": "string"}},
+      "additionalProperties": false}
+
+stacks:
+  perm1:
+    stack: config0-hub:::aws::agent_submit
+    arguments:
+      call_name: perm-call-1
+    spec:
+      schedule:
+        archive:
+          timeout: 2700
+
+  perm2:
+    stack: config0-hub:::aws::agent_submit
+    arguments:
+      call_name: perm-call-2
+    spec:
+      schedule:
+        archive:
+          timeout: 2700
+
+  perm3:
+    stack: config0-hub:::aws::agent_submit
+    arguments:
+      call_name: perm-call-3
+    spec:
+      schedule:
+        archive:
+          timeout: 2700
