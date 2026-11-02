@@ -1,0 +1,59 @@
+# Phase 4 AI workflows acceptance, step 3: cancel one running call while another runs
+# on the same server (ai_submit_check, max_concurrent 2). Both calls sleep through
+# their bash tool, so both are running when the acceptance cancels cancel-a through
+# the run page's Cancel. Expected: cancel requested, then the confirmed stop; no
+# surviving process in the cancelled order's process group; keep-b finishes and posts
+# its result. The cancelled call fails the job, so the server stays for the user
+# (removed in step 11). Public subnet; pi (the claude key fixture was the OpenAI key).
+
+global:
+  metadata:
+    workflow:
+      category: ai
+  arguments:
+    aws_default_region: ap-northeast-1
+
+selectors:
+  cancel_a:
+    match:
+      filter:
+        resource_type: agent_result
+      keys:
+        name: cancel-a
+  keep_b:
+    match:
+      filter:
+        resource_type: agent_result
+      keys:
+        name: keep-b
+
+stacks:
+  cancel:
+    stack: williaumwu:::config0_yamls_repos::ai_submit_check
+    selectors:
+      - cancel_a
+      - keep_b
+    arguments:
+      subnet_id: subnet-0df609094a0975441   # public subnet of ai-workflows-vpc-nat
+      public_subnet: true
+      repository_url: https://github.com/williaumwu/config0-ai-workflows-acceptance
+      branch: acceptance
+      repository_credential_set_name: ACCEPTANCE_REPO_TOKEN
+      max_turns: 6
+      max_budget_usd: 0.5
+      phase2complete_timeout: 1800
+      run_timeout: 7200
+      artifact_prefix: s3://config0-tmp-62635338/ai-acceptance/cancel/
+      task: >-
+        Read src/greeting.py. Do not change any file. Report the name of the function it defines and the exact string that function returns for the name "Config0".
+      task_schema: >-
+        {"type": "object", "required": ["function_name", "greeting"],
+        "properties": {"function_name": {"type": "string"}, "greeting": {"type": "string"}},
+        "additionalProperties": false}
+      max_concurrent: 2
+      calls: >-
+        [{"call_name": "cancel-a", "adapter": "pi", "model": "openai/gpt-5-mini", "key_set_name": "OPENAI_API_KEY", "result_selector": "cancel_a", "task": "Use your bash tool to run exactly `sleep 600` and wait for it to finish. Then reply."}, {"call_name": "keep-b", "adapter": "pi", "model": "openai/gpt-5-mini", "key_set_name": "OPENAI_API_KEY", "result_selector": "keep_b", "task": "First use your bash tool to run exactly `sleep 180` and wait for it to finish. Then read src/greeting.py, do not change any file, and report the name of the function it defines and the exact string that function returns for the name \"Config0\"."}]
+    spec:
+      schedule:
+        archive:
+          timeout: 6000

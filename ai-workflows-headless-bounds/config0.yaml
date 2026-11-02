@@ -1,0 +1,123 @@
+# Phase 4 AI workflows acceptance, step 4: bounds and failure handling, one root stack
+# per case (each its own run and its own per-run server, ai_submit_check):
+# - invalid: the task schema cannot be met (minimum 10, maximum 5): the result fails
+#   validation after the one schema-repair turn; the order fails, the server stays.
+# - missingkey: the model key set ANTHROPIC_API_KEY is granted by name but does not
+#   exist: the daemon cannot read it and posts a failed envelope.
+# - restart: the agent sleeps 240 s through its bash tool; the acceptance restarts the
+#   runner daemon over SSM during the sleep and reads what the restart does.
+# A failed call leaves its server, queue and role for the user (removed in step 11).
+# Servers on the public subnet with the internet gateway; pi (the claude key fixture
+# was the OpenAI key).
+
+global:
+  metadata:
+    workflow:
+      category: ai
+  arguments:
+    aws_default_region: ap-northeast-1
+
+selectors:
+  bounds_invalid:
+    match:
+      filter:
+        resource_type: agent_result
+      keys:
+        name: bounds-invalid
+  bounds_missingkey:
+    match:
+      filter:
+        resource_type: agent_result
+      keys:
+        name: bounds-missingkey
+  bounds_restart:
+    match:
+      filter:
+        resource_type: agent_result
+      keys:
+        name: bounds-restart
+
+stacks:
+  invalid:
+    stack: williaumwu:::config0_yamls_repos::ai_submit_check
+    selectors:
+      - bounds_invalid
+    arguments:
+      subnet_id: subnet-0df609094a0975441   # public subnet of ai-workflows-vpc-nat
+      public_subnet: true
+      repository_url: https://github.com/williaumwu/config0-ai-workflows-acceptance
+      branch: acceptance
+      repository_credential_set_name: ACCEPTANCE_REPO_TOKEN
+      max_turns: 6
+      max_budget_usd: 0.5
+      phase2complete_timeout: 1800
+      run_timeout: 7200
+      artifact_prefix: s3://config0-tmp-62635338/ai-acceptance/bounds-invalid/
+      task: >-
+        Do not read or change any file. Reply with a JSON object whose field answer is the integer 7.
+      task_schema: >-
+        {"type": "object", "required": ["answer"],
+        "properties": {"answer": {"type": "integer", "minimum": 10, "maximum": 5}},
+        "additionalProperties": false}
+      calls: >-
+        [{"call_name": "bounds-invalid", "adapter": "pi", "model": "openai/gpt-5-mini", "key_set_name": "OPENAI_API_KEY", "result_selector": "bounds_invalid"}]
+    spec:
+      schedule:
+        archive:
+          timeout: 6000
+
+  missingkey:
+    stack: williaumwu:::config0_yamls_repos::ai_submit_check
+    selectors:
+      - bounds_missingkey
+    arguments:
+      subnet_id: subnet-0df609094a0975441   # public subnet of ai-workflows-vpc-nat
+      public_subnet: true
+      repository_url: https://github.com/williaumwu/config0-ai-workflows-acceptance
+      branch: acceptance
+      repository_credential_set_name: ACCEPTANCE_REPO_TOKEN
+      max_turns: 6
+      max_budget_usd: 0.5
+      phase2complete_timeout: 1800
+      run_timeout: 7200
+      artifact_prefix: s3://config0-tmp-62635338/ai-acceptance/bounds-missingkey/
+      task: >-
+        Read src/greeting.py. Do not change any file. Report the name of the function it defines and the exact string that function returns for the name "Config0".
+      task_schema: >-
+        {"type": "object", "required": ["function_name", "greeting"],
+        "properties": {"function_name": {"type": "string"}, "greeting": {"type": "string"}},
+        "additionalProperties": false}
+      calls: >-
+        [{"call_name": "bounds-missingkey", "adapter": "pi", "model": "openai/gpt-5-mini", "key_set_name": "ANTHROPIC_API_KEY", "result_selector": "bounds_missingkey"}]
+    spec:
+      schedule:
+        archive:
+          timeout: 6000
+
+  restart:
+    stack: williaumwu:::config0_yamls_repos::ai_submit_check
+    selectors:
+      - bounds_restart
+    arguments:
+      subnet_id: subnet-0df609094a0975441   # public subnet of ai-workflows-vpc-nat
+      public_subnet: true
+      repository_url: https://github.com/williaumwu/config0-ai-workflows-acceptance
+      branch: acceptance
+      repository_credential_set_name: ACCEPTANCE_REPO_TOKEN
+      max_turns: 6
+      max_budget_usd: 0.5
+      phase2complete_timeout: 1800
+      run_timeout: 7200
+      artifact_prefix: s3://config0-tmp-62635338/ai-acceptance/bounds-restart/
+      task: >-
+        Read src/greeting.py. Do not change any file. Report the name of the function it defines and the exact string that function returns for the name "Config0".
+      task_schema: >-
+        {"type": "object", "required": ["function_name", "greeting"],
+        "properties": {"function_name": {"type": "string"}, "greeting": {"type": "string"}},
+        "additionalProperties": false}
+      calls: >-
+        [{"call_name": "bounds-restart", "adapter": "pi", "model": "openai/gpt-5-mini", "key_set_name": "OPENAI_API_KEY", "result_selector": "bounds_restart", "task": "First use your bash tool to run exactly `sleep 240` and wait for it to finish. Then read src/greeting.py, do not change any file, and report the name of the function it defines and the exact string that function returns for the name \"Config0\"."}]
+    spec:
+      schedule:
+        archive:
+          timeout: 6000
