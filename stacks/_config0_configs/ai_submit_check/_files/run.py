@@ -20,7 +20,7 @@ calls: a JSON list of {"call_name", "adapter", "model", "key_set_name",
 result_selector names a selector in config0.yaml listed on this stack. A call name
 used twice fails at the second call's finalize pass (step 8). max_concurrent, when
 set, is the server's daemon slot count (agent_server's tfvar), for the cancel check.
-parallel (attempt 2): the submit orders go under one parallel anchor (set_parallel, as
+parallel_submits (attempt 2; "parallel" is the runtime's own flag): the submit orders go under one parallel anchor (set_parallel, as
 agent_attempts_per_run does), so two calls run at once (step 3) or queue past the
 server's slots (step 2). hostname (attempt 2): submit to that existing server (a card
 server) instead; no server is created or removed.
@@ -55,7 +55,7 @@ def run(stackargs):
     stack.parse.add_optional(key="phase2complete_timeout", default=1800, types="int")
     stack.parse.add_optional(key="run_timeout", default=7200, types="int")
     stack.parse.add_optional(key="max_concurrent", types="int")
-    stack.parse.add_optional(key="parallel", default=False, types="bool")
+    stack.parse.add_optional(key="parallel_submits", default=False, types="bool")
     stack.parse.add_optional(key="hostname", types="str")
 
     stack.add_substack("config0-hub:::aws::agent_server")
@@ -97,7 +97,7 @@ def run(stackargs):
         stack.wait_all()
 
     shared = {key: stack.get_attr(key) for key in SUBMIT_SHARED if stack.get_attr(key) is not None}
-    if stack.parallel:
+    if stack.parallel_submits:
         stack.set_parallel()
     for call in calls:
         arguments = dict(shared, hostname=hostname, call_name=call["call_name"],
@@ -109,7 +109,7 @@ def run(stackargs):
         stack.agent_submit.insert(display=True,
                                   arguments=arguments,
                                   human_description=f'Submit "{call["call_name"]}" to {hostname}')
-    if stack.parallel:
+    if stack.parallel_submits:
         stack.unset_parallel()
     stack.wait_all()
 

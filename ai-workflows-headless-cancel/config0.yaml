@@ -53,7 +53,7 @@ stacks:
         "properties": {"function_name": {"type": "string"}, "greeting": {"type": "string"}},
         "additionalProperties": false}
       max_concurrent: 2
-      parallel: true   # both submit orders under one parallel anchor, so both run at once
+      parallel_submits: true   # both submit orders under one parallel anchor, so both run at once
       calls: >-
         [{"call_name": "cancel-a", "adapter": "pi", "model": "openai/gpt-5-mini", "key_set_name": "OPENAI_API_KEY", "result_selector": "cancel_a", "task": "First use your bash tool to run exactly `sleep 300` and wait for it to finish. Then read src/greeting.py, do not change any file, and report the name of the function it defines and the exact string that function returns for the name \"Config0\"."}, {"call_name": "keep-b", "adapter": "pi", "model": "openai/gpt-5-mini", "key_set_name": "OPENAI_API_KEY", "result_selector": "keep_b", "task": "First use your bash tool to run exactly `sleep 180` and wait for it to finish. Then read src/greeting.py, do not change any file, and report the name of the function it defines and the exact string that function returns for the name \"Config0\"."}]
     spec:

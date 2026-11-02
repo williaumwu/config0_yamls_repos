@@ -47,7 +47,7 @@ stacks:
     arguments:
       hostname: agent-perm2
       subnet_id: subnet-0df609094a0975441   # unused with hostname; the stack requires it
-      parallel: true
+      parallel_submits: true
       repository_url: https://github.com/williaumwu/config0-ai-workflows-acceptance
       branch: acceptance
       repository_credential_set_name: ACCEPTANCE_REPO_TOKEN
