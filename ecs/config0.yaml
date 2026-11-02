@@ -54,9 +54,10 @@ selectors:
         cloud: aws
 
 stacks:
-  # Order 0: the scenario VPC, rds-iam shape. The NAT gateway lets the
-  # no-public-IP task pull nginx from public.ecr.aws and reach ssmmessages
-  # for ECS Exec.
+  # Order 0: the scenario VPC. Private-subnet egress is the auto-scaling nano
+  # NAT instance stack below, never a NAT gateway, and no SSM interface
+  # endpoints: with NAT egress the no-public-IP task reaches SSM's public
+  # endpoints (the test-network rule, 2026-11-02).
   vpc:
     stack: config0-hub:::aws_networking::aws_vpc_simple
     labels:
@@ -64,8 +65,8 @@ stacks:
       - infrastructure_network
     arguments:
       vpc_name: ecs-vpc
-      enable_ssm_endpoints: true
-      enable_nat_gateway: true
+      enable_ssm_endpoints: false
+      enable_nat_gateway: false
       cloud_tags_hash:
         environment: dev
         purpose: ecs
@@ -74,6 +75,25 @@ stacks:
         to_base64:
           arguments:
             - cloud_tags_hash
+
+  # Order 0b: the NAT instance (t3.nano class) for the private subnets; it
+  # reads the VPC record through network_vars, so it runs after the vpc stack.
+  nat:
+    stack: config0-hub:::aws_networking::aws_nat_inst_vpc
+    labels:
+      - general
+      - infrastructure_network
+    dependencies:
+      - vpc
+    arguments:
+      service_name: ecs-nat
+      vpc_id: selector:::network_vars::vpc_id
+      public_subnet_ids: selector:::network_vars::public_subnet_ids:csv
+      private_route_table_id: selector:::network_vars::private_route_table_id
+      instance_types: t3.nano,t3a.nano
+      cidr_ingress_accept: 0.0.0.0/0
+    selectors:
+      - network_vars
 
   # Order 1: the cluster and one nginx Fargate task (the stack defaults),
   # in the private subnets and the api security group.
@@ -84,6 +104,7 @@ stacks:
       - infrastructure_compute
     dependencies:
       - vpc
+      - nat
     arguments:
       sg_id: selector:::sg_vars::api_sg_id
       subnet_ids: selector:::network_vars::private_subnet_ids
