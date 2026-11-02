@@ -1,0 +1,75 @@
+# Phase 5 AI workflows acceptance, step 4: two independent attempt groups in one
+# run, under one parallel anchor, max_attempts 2.
+#
+# agent_attempts_per_run inserts agent_attempts once per task, both depending on
+# the parallel anchor alone, so the two chains run side by side; the server's
+# removal waits on the block's wait row.
+# - "readme" wins at attempt 1 (no acceptance_schema); its attempt 2 is
+#   cancelled.
+# - "notes" fails attempt 1's acceptance check (attempt_marker "first", the
+#   check wants "retry"; see ai-workflows-attempt-second for both briefs) and
+#   wins at attempt 2.
+# readme's win never cancels notes' attempt 2: the sweep cancels only orders
+# carrying the evaluated row's attempt_group_id. Every tick's one query returns
+# every evaluated row of the run. Each task's next order reads its own row
+# through its own selector.
+#
+# Fixtures: as ai-workflows-attempt-first (re-read phase 4's proofs before
+# step 1; the FIXTURE values fail loud at emission).
+
+global:
+  metadata:
+    workflow:
+      category: ai
+  arguments:
+    aws_default_region: ap-northeast-1
+
+readme_group:
+  match:
+    filter:
+      resource_type: attempt_group
+    keys:
+      name: readme
+
+notes_group:
+  match:
+    filter:
+      resource_type: attempt_group
+    keys:
+      name: notes
+
+stacks:
+  attempts:
+    stack: config0-hub:::aws::agent_attempts_per_run
+    selectors:
+      - readme_group
+      - notes_group
+    arguments:
+      # Fixtures.
+      subnet_id: subnet-0d8be45b720607abd   # phase 2's NAT-backed private subnet (ai-workflows-vpc-nat)
+      repository_url: FIXTURE-test-repository-https-url
+      repository_credential_set_name: FIXTURE-test-repository-read-credential-set
+      artifact_prefix: FIXTURE-artifact-prefix-s3-url
+      key_set_name: ANTHROPIC_API_KEY       # or CLAUDE_CODE_OAUTH_TOKEN, the set phase 4 holds
+      # The call.
+      adapter: claude
+      max_turns: 20
+      max_budget_usd: 1
+      max_attempts: 2
+      phase2complete_timeout: 900
+      run_timeout: 7200
+      task_schema: >-
+        {"type": "object", "required": ["summary", "attempt_marker"],
+        "properties": {"summary": {"type": "string"}, "attempt_marker": {"enum": ["first", "retry"]}},
+        "additionalProperties": false}
+      tasks: >-
+        [{"name": "readme", "result_selector": "readme_group",
+        "task": "Append the line \"checked by the readme attempt group\" to README.md at the repository root, creating the file if it is absent. In the task result, set summary to one sentence on what you changed and set attempt_marker to \"first\"."},
+        {"name": "notes", "result_selector": "notes_group",
+        "acceptance_schema": {"type": "object", "required": ["attempt_marker"], "properties": {"attempt_marker": {"const": "retry"}}},
+        "task": "Append the line \"checked by an attempt group\" to NOTES.md at the repository root, creating the file if it is absent. In the task result, set summary to one sentence on what you changed. Set attempt_marker to \"first\", unless this brief says an earlier attempt failed a check; then set it to \"retry\"."}]
+    spec:
+      schedule:
+        # 2 x (900 s park + 600 s evaluation) per chain, side by side, + the server and its removal.
+        archive:
+          timeout: 5400

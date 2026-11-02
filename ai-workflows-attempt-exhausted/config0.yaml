@@ -1,0 +1,61 @@
+# Phase 5 AI workflows acceptance, step 3: every attempt fails, max_attempts 3.
+#
+# The task's acceptance_schema requires approved_by_human, which the task
+# schema forbids (additionalProperties false), so every attempt's evaluation
+# fails the acceptance check with 'approved_by_human' is a required property.
+# Attempts 1 and 2 write the next attempt and brief and exit 0. Attempt 3's
+# evaluation writes the row evaluated, outcome failed, and exits non-zero; its
+# one retry reads the row and exits non-zero without another write, and it
+# settles with retries 0. The job fails: the next order and the server's
+# removal fail-settle, and the per-run server stays for explicit deletion
+# (step 7).
+#
+# Fixtures: as ai-workflows-attempt-first (re-read phase 4's proofs before
+# step 1; the FIXTURE values fail loud at emission).
+
+global:
+  metadata:
+    workflow:
+      category: ai
+  arguments:
+    aws_default_region: ap-northeast-1
+
+approval_group:
+  match:
+    filter:
+      resource_type: attempt_group
+    keys:
+      name: approval
+
+stacks:
+  attempts:
+    stack: config0-hub:::aws::agent_attempts_per_run
+    selectors:
+      - approval_group
+    arguments:
+      # Fixtures.
+      subnet_id: subnet-0d8be45b720607abd   # phase 2's NAT-backed private subnet (ai-workflows-vpc-nat)
+      repository_url: FIXTURE-test-repository-https-url
+      repository_credential_set_name: FIXTURE-test-repository-read-credential-set
+      artifact_prefix: FIXTURE-artifact-prefix-s3-url
+      key_set_name: ANTHROPIC_API_KEY       # or CLAUDE_CODE_OAUTH_TOKEN, the set phase 4 holds
+      # The call.
+      adapter: claude
+      max_turns: 20
+      max_budget_usd: 1
+      max_attempts: 3
+      phase2complete_timeout: 900
+      run_timeout: 7200
+      task_schema: >-
+        {"type": "object", "required": ["summary", "attempt_marker"],
+        "properties": {"summary": {"type": "string"}, "attempt_marker": {"enum": ["first", "retry"]}},
+        "additionalProperties": false}
+      tasks: >-
+        [{"name": "approval", "result_selector": "approval_group",
+        "acceptance_schema": {"type": "object", "required": ["approved_by_human"]},
+        "task": "Append the line \"checked by an attempt group\" to NOTES.md at the repository root, creating the file if it is absent. In the task result, set summary to one sentence on what you changed and set attempt_marker to \"first\"."}]
+    spec:
+      schedule:
+        # 3 x (900 s park + 600 s evaluation, plus one evaluation retry) + the server.
+        archive:
+          timeout: 6600
