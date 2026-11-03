@@ -17,6 +17,7 @@ selectors:
         resource_type: agent_result
       keys:
         name: bounds-unreachable
+      scope: run_id
 
 stacks:
   link:

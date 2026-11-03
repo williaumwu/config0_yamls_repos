@@ -32,18 +32,21 @@ selectors:
         resource_type: agent_result
       keys:
         name: bounds-invalid
+      scope: run_id
   bounds_missingkey:
     match:
       filter:
         resource_type: agent_result
       keys:
         name: bounds-missingkey
+      scope: run_id
   bounds_restart:
     match:
       filter:
         resource_type: agent_result
       keys:
         name: bounds-restart
+      scope: run_id
 
   bounds_silence:
     match:
@@ -51,12 +54,14 @@ selectors:
         resource_type: agent_result
       keys:
         name: bounds-silence
+      scope: run_id
   bounds_outage:
     match:
       filter:
         resource_type: agent_result
       keys:
         name: bounds-outage
+      scope: run_id
 
 stacks:
   invalid:

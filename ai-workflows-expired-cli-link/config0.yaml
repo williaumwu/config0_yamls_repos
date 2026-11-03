@@ -20,6 +20,7 @@ selectors:
         resource_type: agent_result
       keys:
         name: expired-link
+      scope: run_id
 
 stacks:
   link:

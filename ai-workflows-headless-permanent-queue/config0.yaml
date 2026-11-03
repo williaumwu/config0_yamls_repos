@@ -27,18 +27,21 @@ selectors:
         resource_type: agent_result
       keys:
         name: permq-call-1
+      scope: run_id
   permq_2:
     match:
       filter:
         resource_type: agent_result
       keys:
         name: permq-call-2
+      scope: run_id
   permq_3:
     match:
       filter:
         resource_type: agent_result
       keys:
         name: permq-call-3
+      scope: run_id
 
 stacks:
   perm:

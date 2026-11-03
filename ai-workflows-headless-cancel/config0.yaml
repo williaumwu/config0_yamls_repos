@@ -22,12 +22,14 @@ selectors:
         resource_type: agent_result
       keys:
         name: cancel-a
+      scope: run_id
   keep_b:
     match:
       filter:
         resource_type: agent_result
       keys:
         name: keep-b
+      scope: run_id
 
 stacks:
   cancel:

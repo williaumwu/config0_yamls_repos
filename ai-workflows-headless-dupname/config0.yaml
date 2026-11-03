@@ -17,12 +17,14 @@ selectors:
         resource_type: agent_result
       keys:
         name: dup-a
+      scope: run_id
   dup_b:
     match:
       filter:
         resource_type: agent_result
       keys:
         name: dup-b
+      scope: run_id
 
 stacks:
   dup:

@@ -28,12 +28,14 @@ selectors:
         resource_type: agent_result
       keys:
         name: claude-rows-a
+      scope: run_id
   pi_row_b:
     match:
       filter:
         resource_type: agent_result
       keys:
         name: pi-rows-b
+      scope: run_id
 
 stacks:
   rows:
